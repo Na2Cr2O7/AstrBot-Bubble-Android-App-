@@ -18,8 +18,8 @@ dependencies:
   dio: ^5.7.0
   cupertino_icons: ^1.0.2
   get: ^4.6.5
-  device_info_plus: ^11.1.1
-  package_info_plus: ^8.0.0
+  device_info_plus: ^13.3.0
+  package_info_plus: ^10.2.2
   tar: ^2.0.0
   path: ^1.9.1
   webview_flutter: ^4.10.0
@@ -28,25 +28,25 @@ dependencies:
   http: ^1.2.2
   crypto: ^3.0.7
   url_launcher: ^6.3.1
-  file_picker: ^8.1.6
+  file_picker: ^13.4.0
   flutter_markdown: ^0.7.4+3
 
   # get repo
   xterm:
     git:
-      url: https://github.com/TerminalStudio/xterm.dart
+      url: https://gh-proxy.com/https://github.com/TerminalStudio/xterm.dart
       ref: master
   settings:
-    git: https://github.com/nightmare-space/settings
+    git: https://gh-proxy.com/https://github.com/nightmare-space/settings
   flutter_pty:
-    git: https://github.com/TerminalStudio/flutter_pty
+    git: https://gh-proxy.com/https://github.com/TerminalStudio/flutter_pty
   global_repository:
-    git: https://github.com/nightmare-space/global_repository
+    git: https://gh-proxy.com/https://github.com/nightmare-space/global_repository
   behavior_api:
     git:
-      url: https://github.com/nightmare-space/empty_package
+      url: https://gh-proxy.com/https://github.com/nightmare-space/empty_package
       path: behavior_api
-  flutter_foreground_task: ^9.1.0
+  flutter_foreground_task: ^11.0.3
 
 dev_dependencies:
   flutter_test:

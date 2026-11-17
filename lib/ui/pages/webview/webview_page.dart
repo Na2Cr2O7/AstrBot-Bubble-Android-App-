@@ -381,7 +381,7 @@ class _WebViewPageState extends State<WebViewPage> {
   Future<List<String>> _handleFileSelection(FileSelectorParams params) async {
     try {
       // 根据参数配置文件选择器
-      FilePickerResult? result;
+      List<PlatformFile> files = const [];
 
       // 判断是否接受多个文件
       final bool allowMultiple = params.mode == FileSelectorMode.openMultiple;
@@ -446,17 +446,17 @@ class _WebViewPageState extends State<WebViewPage> {
             ].contains(type.toLowerCase()));
 
         if (isImageOnly) {
-          result = await FilePicker.platform.pickFiles(
+          files = await _pickFiles(
             type: FileType.image,
             allowMultiple: allowMultiple,
           );
         } else if (isVideoOnly) {
-          result = await FilePicker.platform.pickFiles(
+          files = await _pickFiles(
             type: FileType.video,
             allowMultiple: allowMultiple,
           );
         } else if (isAudioOnly) {
-          result = await FilePicker.platform.pickFiles(
+          files = await _pickFiles(
             type: FileType.audio,
             allowMultiple: allowMultiple,
           );
@@ -475,13 +475,13 @@ class _WebViewPageState extends State<WebViewPage> {
           }
 
           if (allowedExtensions.isNotEmpty) {
-            result = await FilePicker.platform.pickFiles(
+            files = await _pickFiles(
               type: FileType.custom,
               allowedExtensions: allowedExtensions,
               allowMultiple: allowMultiple,
             );
           } else {
-            result = await FilePicker.platform.pickFiles(
+            files = await _pickFiles(
               type: FileType.any,
               allowMultiple: allowMultiple,
             );
@@ -489,16 +489,16 @@ class _WebViewPageState extends State<WebViewPage> {
         }
       } else {
         // 没有指定类型，允许选择任何文件
-        result = await FilePicker.platform.pickFiles(
+        files = await _pickFiles(
           type: FileType.any,
           allowMultiple: allowMultiple,
         );
       }
 
       // 返回选中的文件路径,转换为 file:// URI 格式
-      if (result != null && result.files.isNotEmpty) {
+      if (files.isNotEmpty) {
         final List<String> filePaths =
-            result.files.where((file) => file.path != null).map((file) {
+            files.where((file) => file.path != null).map((file) {
           final path = file.path!;
           // 如果路径已经是 file:// 开头,直接返回
           if (path.startsWith('file://')) {
@@ -519,6 +519,24 @@ class _WebViewPageState extends State<WebViewPage> {
       debugPrint('File selection error: $e');
       return [];
     }
+  }
+
+  Future<List<PlatformFile>> _pickFiles({
+    required FileType type,
+    List<String>? allowedExtensions,
+    required bool allowMultiple,
+  }) async {
+    if (allowMultiple) {
+      return FilePicker.pickFiles(
+        type: type,
+        allowedExtensions: allowedExtensions,
+      );
+    }
+    final file = await FilePicker.pickFile(
+      type: type,
+      allowedExtensions: allowedExtensions,
+    );
+    return file == null ? const <PlatformFile>[] : <PlatformFile>[file];
   }
 
   void _injectClipboardScript(WebViewController controller) {

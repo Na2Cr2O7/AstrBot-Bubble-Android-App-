@@ -196,3 +196,6 @@ build_debug_apk.bat
 
 # work space
 temp/
+
+# Editor swap files
+*.kate-swp

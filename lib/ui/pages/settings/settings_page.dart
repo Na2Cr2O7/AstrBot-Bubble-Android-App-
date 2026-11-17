@@ -83,11 +83,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _pickHomeBackground() async {
     try {
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
-      );
-      final path = result?.files.single.path;
+      final file = await FilePicker.pickFile(type: FileType.image);
+      final path = file?.path;
       if (path == null || path.isEmpty) return;
 
       Get.find<HomeController>().setHomeBackgroundPath(path);

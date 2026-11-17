@@ -435,14 +435,13 @@ class _LauncherPageState extends State<LauncherPage>
   }
 
   Future<void> _importInstallerPackage() async {
-    final result = await FilePicker.platform.pickFiles(
+    final file = await FilePicker.pickFile(
       type: FileType.custom,
       allowedExtensions: const ['gz', 'tgz'],
-      withData: true,
     );
-    if (result == null || result.files.isEmpty) return;
-    final bytes = result.files.first.bytes;
-    if (bytes == null || bytes.isEmpty) return;
+    if (file == null) return;
+    final bytes = await file.readAsBytes();
+    if (bytes.isEmpty) return;
 
     await homeController.importInstallerPackage(
       bytes,

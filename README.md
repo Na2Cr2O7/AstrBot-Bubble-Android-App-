@@ -179,6 +179,19 @@
 
 ---
 
+## 🧱 从源码编译
+
+项目包含 `normal` 和 `profileTest` 两个 product flavor。编译时必须显式指定 flavor，否则 Flutter 会因找不到默认的 `app-release.apk` 而报 `Gradle build failed to produce an .apk file`（实际上 APK 已生成，只是文件名带 flavor 后缀）：
+
+```bash
+flutter pub get
+flutter build apk --release --flavor normal
+```
+
+产物位于 `build/app/outputs/flutter-apk/app-normal-release.apk`。
+
+---
+
 ## 🙏 致谢
 感谢以下开源项目为本 App 提供基础支持：
  - [**AstrBot-Android-App**](https://github.com/zz6zz666/AstrBot-Android-App)：原版AstrBot项目
