@@ -10,6 +10,7 @@ import 'package:settings/settings.dart';
 import '../../core/config/environment_config.dart';
 import '../../core/config/service_ports.dart';
 import '../../core/constants/scripts.dart' as scripts;
+import '../../core/utils/file_utils.dart';
 import 'terminal_controller.dart';
 
 class OpenQQDefaults {
@@ -219,33 +220,33 @@ class OpenQQController extends GetxController {
     update();
     try {
       await _syncOpenQQConfig(updateAstrBot: false);
-      final readyFile =
-          File('${scripts.ubuntuPath}/tmp/openqq-display-ready');
-      try {
-        if (await readyFile.exists()) await readyFile.delete();
-      } catch (_) {}
-      await _home.terminalTabManager.addCommandTerminalTab(
-        title: 'OpenQQ',
-        command: _ubuntuCommand('exec bash /root/openqq-display-start.sh'),
-        showInTerminal: true,
-        onOutput: (output) {
-          if (output.contains('noVNC:')) {
-            instance.vncRunning = true;
-          }
-          _parseRuntimeOutput(output);
-        },
-        onCommandExit: (code) {
-          instance.running = false;
-          instance.starting = false;
-          instance.loggedIn = false;
-          instance.vncRunning = false;
-          if (code != 0 && instance.lastError.isEmpty) {
-            instance.lastError = 'OpenQQ 已退出，退出码 $code';
-          }
-          busy.value = false;
-          update();
-        },
-      );
+      // Run inside the existing proot shell instead of starting another
+      // login_ubuntu proot session. Nested proot sessions on Android can
+      // receive SIGTERM when the OpenQQ display starts.
+      await _home.terminalTabManager.addSystemTerminalTab();
+      final tab = _home.terminalTabManager.tabs.last;
+      tab.pty?.writeString('bash /root/openqq-display-start.sh\n');
+      var listening = false;
+      for (var attempt = 0; attempt < 40; attempt++) {
+        if (!await _home.isPortAvailable(OpenQQDefaults.webPort)) {
+          listening = true;
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+      }
+      if (!listening) {
+        instance.starting = false;
+        instance.running = false;
+        instance.lastError = 'OpenQQ 未监听 WebUI 端口，请查看终端日志';
+        busy.value = false;
+        update();
+        return;
+      }
+      instance.starting = false;
+      instance.running = true;
+      instance.vncRunning = true;
+      busy.value = false;
+      update();
     } catch (e) {
       instance.starting = false;
       busy.value = false;
