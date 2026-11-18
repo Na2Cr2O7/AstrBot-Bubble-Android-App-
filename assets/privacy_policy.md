@@ -8,7 +8,7 @@
 
 - 本应用（AstrBot-Bubble-Android-App）是完全免费的开源项目，**从未授权任何个人或平台进行收费分发**
 - 如您通过付费渠道获取本应用，请立即向相关平台举报并联系我
-- 官方获取渠道：[GitHub项目页面](https://github.com/MuFengDR/AstrBot-Bubble-Android-App)
+- 官方获取渠道：[GitHub项目页面](https://github.com/Na2Cr2O7/AstrBot-Bubble-Android-App-)
 
 ## 导言
 

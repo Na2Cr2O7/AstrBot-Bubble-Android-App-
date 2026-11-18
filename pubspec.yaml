@@ -58,6 +58,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/
+    - LICENSES/AGPL-3.0.txt
+    - LICENSES/BSD-3-Clause.txt
 
 flutter_intl:
   enabled: true

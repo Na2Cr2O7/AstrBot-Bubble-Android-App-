@@ -3,8 +3,8 @@ class Config {
   static const String ubuntuFileName = 'ubuntu-noble-aarch64-pd-v4.18.0.tar.xz';
 
   // GitHub 仓库信息
-  static const String githubOwner = 'MuFengDR';
-  static const String githubRepo = 'AstrBot-Bubble-Android-App';
+  static const String githubOwner = 'Na2Cr2O7';
+  static const String githubRepo = 'AstrBot-Bubble-Android-App-';
   static const String githubReleasesPath =
       '/repos/$githubOwner/$githubRepo/releases/latest';
 

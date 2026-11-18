@@ -18,6 +18,7 @@ import '../../../core/services/password_manager.dart';
 import '../../../core/config/app_config.dart';
 import '../../../core/config/environment_config.dart';
 import '../../widgets/diagnostic_dialog.dart';
+import 'open_source_licenses_page.dart';
 
 class SettingsPage extends StatefulWidget {
   final WebViewController astrBotController;
@@ -1156,6 +1157,12 @@ class _SettingsPageState extends State<SettingsPage> {
             _appVersion.isEmpty ? '加载中...' : '$_appVersion（点击检查更新）',
           ),
           onTap: () => _checkForUpdates(),
+        ),
+        ListTile(
+          leading: const Icon(Icons.description_outlined),
+          title: const Text('开源许可'),
+          subtitle: const Text('BSD-3-Clause / OpenQQ AGPL-3.0'),
+          onTap: () => Get.to(() => const OpenSourceLicensesPage()),
         ),
         Obx(() {
           final backgroundPath =

@@ -204,13 +204,26 @@ flutter build apk --release --flavor normal
 ## 📲 **立即体验**  
  - 百度网盘：[**分享链接**](https://pan.baidu.com/s/1s7bR2WeRmOKZmHHAGgcsQQ?pwd=POPO)
  - 夸克网盘：[**分享链接**](https://pan.quark.cn/s/af1ee9aaffb8?pwd=PjbJ)
- - GitHub 仓库：[GitHub](https://github.com/MuFengDR/AstrBot-Bubble-Android-App)  在 release 页面下载最新版本 `.apk` 文件安装即可使用
+ - GitHub 仓库：[GitHub](https://github.com/Na2Cr2O7/AstrBot-Bubble-Android-App-)  在 release 页面下载最新版本 `.apk` 文件安装即可使用
 
 ---
 
 ## 许可证说明 📜
 
-本项目采用 **BSD-3-Clause 许可证**，尊重根基项目 Code LFA 的开源协议。
+本项目分成两个独立组件：
+
+- **App 本体**：BSD-3-Clause，见根目录 `LICENSE`
+- **OpenQQ**：AGPL-3.0，安装时从上游仓库获取，不打包进 APK
+
+第三方许可证、OpenQQ 版本与修改说明见：
+
+- [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
+- [`LICENSES/AGPL-3.0.txt`](LICENSES/AGPL-3.0.txt)
+- [`LICENSES/BSD-3-Clause.txt`](LICENSES/BSD-3-Clause.txt)
+
+App 内“设置 → 开源许可”也可以查看完整文本。
+
+如果后续把 OpenQQ 源码或二进制直接打进 APK，需要重新评估整体分发方式，通常应把整体按 AGPL-3.0 发布。
 
 ---
 
