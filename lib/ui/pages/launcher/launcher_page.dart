@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -9,8 +10,10 @@ import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/config/environment_config.dart';
+import '../../../core/config/feature_flags.dart';
 import '../../../core/config/service_ports.dart';
 import '../../../core/constants/scripts.dart' as scripts;
+import '../../controllers/openqq_controller.dart';
 import '../../controllers/terminal_controller.dart';
 import '../../widgets/glass_panel.dart';
 
@@ -31,6 +34,9 @@ class _LauncherPageState extends State<LauncherPage>
         'https://github.com/MuFengDR/AstrBot-Android-Scripts/releases/latest',
       );
   final HomeController homeController = Get.find<HomeController>();
+  OpenQQController get openQQ => Get.isRegistered<OpenQQController>()
+      ? Get.find<OpenQQController>()
+      : Get.put(OpenQQController());
   final Map<String, _EnvStepState> _environmentStates = {};
   final Map<String, _NapCatAccountOperation> _napCatBusyOperations = {};
   final Map<String, BotBindingConfigState> _botBindingStates = {};
@@ -178,6 +184,17 @@ class _LauncherPageState extends State<LauncherPage>
   }
 
   Future<void> _runStep(_EnvStep step, _EnvStepState currentState) async {
+    if (step.id == 'openqq') {
+      try {
+        await openQQ.install();
+        await _refreshEnvironmentStatus();
+        _showSnack('OpenQQ 安装已在终端运行');
+        widget.onNavigate?.call(2);
+      } catch (e) {
+        _showSnack('启动失败：$e');
+      }
+      return;
+    }
     if (!currentState.enabled) {
       _showSnack(
         _installerScriptState == _InstallerScriptState.valid
@@ -709,7 +726,9 @@ class _LauncherPageState extends State<LauncherPage>
       final scriptReady = installerState.state == _InstallerScriptState.valid;
       final baseCommandReady = scriptReady && await _hasBaseCommands();
       final uvReady = scriptReady && baseCommandReady && await _hasUv();
-      final napCatReady = scriptReady && baseCommandReady && await _hasNapCat();
+      final napCatReady =
+          kEnableNapCat && scriptReady && baseCommandReady && await _hasNapCat();
+      final openQQReady = await _hasOpenQQ();
       final astrBotReady = scriptReady && uvReady && await _hasAstrBot();
       final openCodeReady = scriptReady && baseCommandReady && await _hasOpenCode();
 
@@ -726,9 +745,15 @@ class _LauncherPageState extends State<LauncherPage>
           installed: uvReady,
           enabled: scriptReady && baseCommandReady,
         );
-        _environmentStates['napcat'] = _EnvStepState(
-          installed: napCatReady,
-          enabled: scriptReady && baseCommandReady,
+        if (kEnableNapCat) {
+          _environmentStates['napcat'] = _EnvStepState(
+            installed: napCatReady,
+            enabled: scriptReady && baseCommandReady,
+          );
+        }
+        _environmentStates['openqq'] = _EnvStepState(
+          installed: openQQReady,
+          enabled: true,
         );
         _environmentStates['astrbot'] = _EnvStepState(
           installed: astrBotReady,
@@ -830,6 +855,19 @@ class _LauncherPageState extends State<LauncherPage>
         await Directory('${scripts.ubuntuPath}/root/napcat').exists();
   }
 
+  Future<bool> _hasOpenQQ() async {
+    final marker = File(
+      '${scripts.ubuntuPath}/root/.openqq-android/installed.json',
+    );
+    if (!await marker.exists()) return false;
+    try {
+      final data = jsonDecode(await marker.readAsString());
+      return data is Map && data['openqq'] == OpenQQDefaults.version;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<bool> _anyFileExists(List<File> files) async {
     for (final file in files) {
       if (await file.exists()) return true;
@@ -920,7 +958,11 @@ class _LauncherPageState extends State<LauncherPage>
                       children: [
                         _buildQuickStartCard(context),
                         const SizedBox(height: 12),
-                        _buildNapCatAccountsCard(context),
+                        if (kEnableNapCat) ...[
+                          _buildNapCatAccountsCard(context),
+                          const SizedBox(height: 12),
+                        ],
+                        _buildOpenQQCard(context),
                         const SizedBox(height: 12),
                         Obx(() => homeController.isOpenCodeInstalled.value
                             ? Column(
@@ -1195,6 +1237,145 @@ class _LauncherPageState extends State<LauncherPage>
       message: '请先在环境管理中安装 AstrBot',
       child: card,
     );
+  }
+
+  Widget _buildOpenQQCard(BuildContext context) {
+    return GetBuilder<OpenQQController>(
+      builder: (openqq) {
+        final installed = openqq.instance.installed ||
+            _environmentStates['openqq']?.installed == true;
+        final data = openqq.instance;
+        final running = data.running || data.starting;
+        final status = data.installing
+            ? '安装中'
+            : data.starting
+                ? '启动中'
+                : data.stopping
+                    ? '停止中'
+                    : running
+                        ? (data.loggedIn ? '已登录' : '等待登录')
+                        : '未启动';
+        final qq = data.selfId.isNotEmpty
+            ? data.selfId
+            : (data.qq.isNotEmpty ? data.qq : '未登录');
+        final card = GlassPanel(
+          padding: const EdgeInsets.all(16),
+          opacity: homeController.cardGlassOpacity.value,
+          blur: homeController.glassBlurAmount.value * 30,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.qr_code_2),
+                  const SizedBox(width: 8),
+                  Text('OpenQQ', style: Theme.of(context).textTheme.titleMedium),
+                  const Spacer(),
+                  PopupMenuButton<String>(
+                    tooltip: 'OpenQQ 更多',
+                    onSelected: (value) async {
+                      switch (value) {
+                        case 'refresh':
+                          await openQQ.refreshInstalled();
+                          break;
+                        case 'stopVnc':
+                          await openqq.stopVnc();
+                          break;
+                        case 'copyWebUi':
+                          final token = data.webUiToken;
+                          final url = token.isEmpty
+                              ? data.webUiUrl
+                              : '${data.webUiUrl}/#token=$token';
+                          if (url.isEmpty) {
+                            _showSnack('OpenQQ 尚未启动，暂无 WebUI 地址');
+                          } else {
+                            await Clipboard.setData(ClipboardData(text: url));
+                            _showSnack('已复制 OpenQQ WebUI 地址');
+                          }
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(value: 'refresh', child: Text('刷新状态')),
+                      PopupMenuItem(value: 'stopVnc', child: Text('停止登录画面')),
+                      PopupMenuItem(value: 'copyWebUi', child: Text('复制 WebUI 地址')),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'QQ $qq · $status',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              if (data.lastError.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  data.lastError,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _homeButton(
+                      context: context,
+                      tone: running
+                          ? _HomeButtonTone.destructive
+                          : _HomeButtonTone.primary,
+                      onPressed: data.installing || data.stopping
+                          ? null
+                          : () => _toggleOpenQQ(running),
+                      icon: Icon(running ? Icons.stop : Icons.play_arrow),
+                      label: Text(running ? '停止' : '启动 OpenQQ'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _homeButton(
+                      context: context,
+                      onPressed: running && !data.installing
+                          ? _openOpenQQLogin
+                          : null,
+                      icon: const Icon(Icons.login),
+                      label: const Text('登录画面'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+        return _buildInstallGatedCard(
+          installed: installed,
+          message: '请先在环境管理中安装 OpenQQ',
+          child: card,
+        );
+      },
+    );
+  }
+
+  Future<void> _toggleOpenQQ(bool running) async {
+    try {
+      if (running) {
+        await openQQ.stop();
+      } else {
+        await openQQ.start();
+      }
+    } catch (e) {
+      _showSnack('$e');
+    }
+  }
+
+  Future<void> _openOpenQQLogin() async {
+    try {
+      await openQQ.startVnc();
+      homeController.requestOpenOpenQQVnc();
+      widget.onNavigate?.call(1);
+    } catch (e) {
+      _showSnack('打开登录画面失败：$e');
+    }
   }
 
   Widget _buildNapCatAccountsCard(BuildContext context) {
@@ -2464,12 +2645,20 @@ class _LauncherPageState extends State<LauncherPage>
         const Icon(Icons.construction),
         reinstallDescription: '将删除现有 uv/uvx 后重新下载。是否继续？',
       ),
+      if (kEnableNapCat)
+        _EnvStep(
+          'napcat',
+          'NapCat',
+          '安装或修复 NapCatQQ',
+          const Icon(Icons.pets),
+          reinstallDescription: '将清理 NapCat 安装文件并重新安装，尽量保留配置目录。是否继续？',
+        ),
       _EnvStep(
-        'napcat',
-        'NapCat',
-        '安装或修复 NapCatQQ',
-        const Icon(Icons.pets),
-        reinstallDescription: '将清理 NapCat 安装文件并重新安装，尽量保留配置目录。是否继续？',
+        'openqq',
+        'OpenQQ',
+        '安装 QQ / Node / OpenQQ 与登录画面',
+        const Icon(Icons.qr_code_2),
+        reinstallDescription: '将重新检查 OpenQQ、QQ 和 Node，保留登录态与 Bot 数据。是否继续？',
       ),
       _EnvStep(
         'astrbot',

@@ -204,7 +204,7 @@ class OpenQQController extends GetxController {
     if (!instance.installed) {
       throw StateError('OpenQQ 尚未安装');
     }
-    if (!_home.isAstrBotRunning.value) {
+    if (await _home.isPortAvailable(ServicePorts.dashboardPort)) {
       throw StateError('请先启动 AstrBot');
     }
     instance.starting = true;
@@ -420,18 +420,16 @@ class OpenQQController extends GetxController {
     }
     final existingToken =
         platform['ws_reverse_token']?.toString().trim() ?? '';
-    final token = existingToken.isNotEmpty ? existingToken : _newToken();
+    // An empty token is valid for aiocqhttp. Preserve it while AstrBot is
+    // already running; generating a new one would require an AstrBot restart.
+    final token = existingToken.isNotEmpty
+        ? existingToken
+        : (updateAstrBot ? _newToken() : '');
     platform['ws_reverse_host'] = '0.0.0.0';
     platform['ws_reverse_port'] = OpenQQDefaults.oneBotPort;
     platform['ws_reverse_token'] = token;
     if (updateAstrBot) {
       await _writeJsonMap(_astrBotConfigFile, astrBot);
-    } else if (existingToken.isEmpty) {
-      // AstrBot is already running and has loaded the old, empty token.
-      // Persist the new token for the next AstrBot start, then make the
-      // caller restart AstrBot before OpenQQ can connect.
-      await _writeJsonMap(_astrBotConfigFile, astrBot);
-      throw StateError('已生成新的 OneBot token，请重启 AstrBot 后再启动 OpenQQ');
     }
 
     final openQQ = await _readJsonMap(_openQQConfigFile) ?? <String, dynamic>{};

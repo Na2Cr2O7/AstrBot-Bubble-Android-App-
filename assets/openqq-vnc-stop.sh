@@ -1,21 +1,10 @@
 #!/bin/bash
-# Stop only x11vnc and websockify, keeping Xvfb and QQ alive.
+# Stop only x11vnc/noVNC and keep Xvfb and QQ alive.
 set -u
 
-OPENQQ_RUNDIR="${OPENQQ_RUNDIR:-/tmp/openqq}"
+OPENQQ_DISPLAY="${OPENQQ_DISPLAY:-1}"
+OPENQQ_NOVNC_PORT="${OPENQQ_NOVNC_PORT:-6080}"
 
-kill_pid_file() {
-  local name="$1"
-  local file="$OPENQQ_RUNDIR/${name}.pid"
-  [ -f "$file" ] || return 0
-  local pid
-  pid="$(cat "$file" 2>/dev/null || true)"
-  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-    kill "$pid" 2>/dev/null || true
-  fi
-  rm -f "$file"
-}
-
-kill_pid_file websockify
-kill_pid_file x11vnc
+pkill -f "/bin/websockify .*:${OPENQQ_NOVNC_PORT}" 2>/dev/null || true
+pkill -f "x11vnc -display :${OPENQQ_DISPLAY}" 2>/dev/null || true
 echo "OpenQQ VNC stopped"

@@ -2768,6 +2768,12 @@ fi
     pendingWebUiTargetId.value = targetId;
   }
 
+  void requestOpenOpenQQVnc() {
+    const targetId = 'openqq-vnc';
+    showWebUiTarget(targetId);
+    pendingWebUiTargetId.value = targetId;
+  }
+
   Future<bool> isPortAvailable(int port) => _isPortAvailable(port);
 
   void requestOpenOpenCodeWebUi() {

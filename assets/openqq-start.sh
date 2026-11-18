@@ -10,62 +10,50 @@ OPENQQ_SCREEN="${OPENQQ_SCREEN:-1280x800x24}"
 OPENQQ_VNC="${OPENQQ_VNC:-1}"
 OPENQQ_VNC_PORT="${OPENQQ_VNC_PORT:-5900}"
 OPENQQ_NOVNC_PORT="${OPENQQ_NOVNC_PORT:-6080}"
-OPENQQ_RUNDIR="${OPENQQ_RUNDIR:-/tmp/openqq}"
 
-mkdir -p "$OPENQQ_RUNDIR" /tmp/.X11-unix
+mkdir -p /tmp/.X11-unix
 chmod 1777 /tmp/.X11-unix 2>/dev/null || true
 
-if [ -f "$OPENQQ_RUNDIR/node.pid" ] && kill -0 "$(cat "$OPENQQ_RUNDIR/node.pid")" 2>/dev/null; then
-  echo "OpenQQ is already running (PID $(cat "$OPENQQ_RUNDIR/node.pid"))"
+if pgrep -f 'node src/main\.mjs' >/dev/null 2>&1; then
+  echo "OpenQQ is already running"
   exit 0
 fi
 
-kill_pid_file() {
-  local file="$1"
-  [ -f "$file" ] || return 0
-  local pid
-  pid="$(cat "$file" 2>/dev/null || true)"
-  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
-    kill "$pid" 2>/dev/null || true
-  fi
-  rm -f "$file"
-}
-
-for name in xmessage websockify x11vnc fluxbox xvfb; do
-  kill_pid_file "$OPENQQ_RUNDIR/$name.pid"
-done
+# Clean up processes left behind by a previous proot session. Do not use
+# PID files here: guest PIDs are not stable across proot sessions and a stale
+# file can point at the new proot process itself.
+pkill -f "Xvfb :${OPENQQ_DISPLAY}" 2>/dev/null || true
+pkill -f "x11vnc -display :${OPENQQ_DISPLAY}" 2>/dev/null || true
+pkill -f 'fluxbox' 2>/dev/null || true
+pkill -f "/bin/websockify .*:${OPENQQ_NOVNC_PORT}" 2>/dev/null || true
 rm -f "/tmp/.X${OPENQQ_DISPLAY}-lock" "/tmp/.X11-unix/X${OPENQQ_DISPLAY}"
 
 Xvfb ":${OPENQQ_DISPLAY}" -screen 0 "$OPENQQ_SCREEN" \
-  -ac +extension GLX +render -noreset >"$OPENQQ_RUNDIR/xvfb.log" 2>&1 &
-echo $! > "$OPENQQ_RUNDIR/xvfb.pid"
+  -ac +extension GLX +render -noreset >/tmp/openqq-xvfb.log 2>&1 &
 for _ in $(seq 1 50); do
   [ -S "/tmp/.X11-unix/X${OPENQQ_DISPLAY}" ] && break
   sleep 0.1
 done
 if [ ! -S "/tmp/.X11-unix/X${OPENQQ_DISPLAY}" ]; then
   echo "Xvfb failed to start on :${OPENQQ_DISPLAY}" >&2
-  cat "$OPENQQ_RUNDIR/xvfb.log" >&2 || true
+  cat /tmp/openqq-xvfb.log >&2 || true
   exit 1
 fi
 
 export DISPLAY=":${OPENQQ_DISPLAY}"
 if command -v fluxbox >/dev/null 2>&1; then
-  fluxbox >"$OPENQQ_RUNDIR/fluxbox.log" 2>&1 &
-  echo $! > "$OPENQQ_RUNDIR/fluxbox.pid"
+  fluxbox >/tmp/openqq-fluxbox.log 2>&1 &
 fi
 
 if [ "$OPENQQ_VNC" = "1" ]; then
   if command -v x11vnc >/dev/null 2>&1; then
     x11vnc -display "$DISPLAY" -forever -shared -rfbport "$OPENQQ_VNC_PORT" \
-      -localhost -nopw -noxdamage -noshm >"$OPENQQ_RUNDIR/x11vnc.log" 2>&1 &
-    echo $! > "$OPENQQ_RUNDIR/x11vnc.pid"
+      -localhost -nopw -noxdamage -noshm >/tmp/openqq-x11vnc.log 2>&1 &
   fi
   if command -v websockify >/dev/null 2>&1 && [ -d /usr/share/novnc ]; then
     websockify --web=/usr/share/novnc/ \
       "127.0.0.1:${OPENQQ_NOVNC_PORT}" "127.0.0.1:${OPENQQ_VNC_PORT}" \
-      >"$OPENQQ_RUNDIR/websockify.log" 2>&1 &
-    echo $! > "$OPENQQ_RUNDIR/websockify.pid"
+      >/tmp/openqq-websockify.log 2>&1 &
   fi
 fi
 
@@ -79,7 +67,6 @@ if [ "$OPENQQ_VNC" = "1" ]; then
 fi
 
 cd "$OPENQQ_DIR"
-echo $$ > "$OPENQQ_RUNDIR/node.pid"
 exec node src/main.mjs start \
   --config "$OPENQQ_CONFIG" \
   --qq-root /opt/QQ \

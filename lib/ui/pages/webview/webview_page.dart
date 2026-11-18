@@ -7,12 +7,14 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../controllers/openqq_controller.dart';
 import '../../controllers/terminal_controller.dart';
 import '../../widgets/glass_panel.dart';
 import '../settings/settings_page.dart';
 import '../terminal/terminal_tab_view.dart';
 import '../../navbar/bottom_nav_bar.dart';
 import '../../../core/services/password_manager.dart';
+import '../../../core/config/feature_flags.dart';
 import '../../../core/config/service_ports.dart';
 import '../../../core/config/ui_preferences.dart';
 
@@ -862,7 +864,8 @@ class _WebViewPageState extends State<WebViewPage> {
 
     return Obx(() {
       // 检查 NapCat WebUI 是否启用
-      final bool napCatEnabled = homeController.napCatWebUiEnabledRx.value;
+      final bool napCatEnabled =
+          kEnableNapCat && homeController.napCatWebUiEnabledRx.value;
       final customWebViews = homeController.customWebViews;
 
       final pageCount = 2 + customWebViews.length + (napCatEnabled ? 1 : 0);
@@ -1128,6 +1131,23 @@ class _WebViewPageState extends State<WebViewPage> {
       ));
     }
 
+    final openQQ = Get.isRegistered<OpenQQController>()
+        ? Get.find<OpenQQController>()
+        : null;
+    if (openQQ?.instance.installed == true &&
+        !hidden.contains('openqq-vnc')) {
+      const url = 'http://127.0.0.1:6080/vnc.html?autoconnect=true';
+      targets.add(
+        _WebUiTarget(
+          id: 'openqq-vnc',
+          title: 'QQ 登录',
+          icon: Icons.qr_code_2,
+          url: url,
+          controller: _getCustomController(url),
+        ),
+      );
+    }
+
     if (homeController.isOpenCodeInstalled.value &&
         !hidden.contains('opencode')) {
       final url = ServicePorts.openCodeWebUiUrl;
@@ -1142,7 +1162,7 @@ class _WebViewPageState extends State<WebViewPage> {
       );
     }
 
-    for (final instance in homeController.napCatInstances) {
+    if (kEnableNapCat) for (final instance in homeController.napCatInstances) {
       final id = 'napcat:${instance['id'] ?? ''}';
       if (hidden.contains(id)) continue;
       final title = instance['name']?.toString() ?? 'NapCat';
