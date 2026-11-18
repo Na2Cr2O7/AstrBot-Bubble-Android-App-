@@ -1147,6 +1147,23 @@ class _WebViewPageState extends State<WebViewPage> {
         ),
       );
     }
+    if (openQQ?.instance.installed == true &&
+        !hidden.contains('openqq-webui')) {
+      final base = openQQ!.instance.webUiUrl.isNotEmpty
+          ? openQQ.instance.webUiUrl
+          : 'http://127.0.0.1:17860';
+      final token = openQQ.instance.webUiToken;
+      final url = token.isEmpty ? base : '$base/#token=$token';
+      targets.add(
+        _WebUiTarget(
+          id: 'openqq-webui',
+          title: 'OpenQQ',
+          icon: Icons.web,
+          url: url,
+          controller: _getCustomController(url),
+        ),
+      );
+    }
 
     if (homeController.isOpenCodeInstalled.value &&
         !hidden.contains('opencode')) {
@@ -1470,6 +1487,7 @@ class _WebViewPageState extends State<WebViewPage> {
       return;
     }
     if (target.id == 'opencode' ||
+        target.id == 'openqq-webui' ||
         target.id.startsWith('napcat:') ||
         target.customWebViewIndex != null) {
       final controller = _customControllers.remove(target.url);

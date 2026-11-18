@@ -2774,6 +2774,12 @@ fi
     pendingWebUiTargetId.value = targetId;
   }
 
+  void requestOpenOpenQQWebUi() {
+    const targetId = 'openqq-webui';
+    showWebUiTarget(targetId);
+    pendingWebUiTargetId.value = targetId;
+  }
+
   Future<bool> isPortAvailable(int port) => _isPortAvailable(port);
 
   void requestOpenOpenCodeWebUi() {

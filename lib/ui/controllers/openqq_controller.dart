@@ -103,10 +103,21 @@ class OpenQQController extends GetxController {
       File('${scripts.ubuntuPath}${OpenQQDefaults.installMarker}');
   File get _astrBotConfigFile =>
       File('${scripts.ubuntuPath}/root/AstrBot/data/cmd_config.json');
+  File get _astrBotSeedConfigFile =>
+      File('${scripts.ubuntuPath}/root/cmd_config.json');
   File get _openQQConfigFile =>
       File('${scripts.ubuntuPath}${OpenQQDefaults.installRoot}/config/openqq.json');
 
   String _runtimeBuffer = '';
+  Timer? _logPollTimer;
+  int _watchedLogOffset = 0;
+
+  @override
+  void onClose() {
+    _logPollTimer?.cancel();
+    _logPollTimer = null;
+    super.onClose();
+  }
 
   @override
   void onInit() {
@@ -131,6 +142,59 @@ class OpenQQController extends GetxController {
   void setAutoStopVnc(bool value) {
     autoStopVnc.value = value;
     box?.put(OpenQQDefaults.autoStopVncKey, value);
+    update();
+  }
+
+  /// Called before AstrBot starts so the aiocqhttp token in AstrBot and
+  /// OpenQQ stay identical without requiring a second restart.
+  Future<void> syncAstrBotConfig() async {
+    if (!await _installMarkerFile.exists()) return;
+    if (_home.isAstrBotRunning.value || _home.isAstrBotStarting.value) return;
+    try {
+      final config = await _readJsonMap(_astrBotConfigFile) ??
+          await _readJsonMap(_astrBotSeedConfigFile);
+      if (config == null) return;
+      final platforms = config['platform'];
+      if (platforms is! List) return;
+      Map<String, dynamic>? platform;
+      for (final item in platforms) {
+        if (item is Map && item['type']?.toString() == 'aiocqhttp') {
+          platform = Map<String, dynamic>.from(item);
+          break;
+        }
+      }
+      if (platform == null) {
+        await _syncOpenQQConfig(updateAstrBot: true);
+        return;
+      }
+      var token = platform['ws_reverse_token']?.toString().trim() ?? '';
+      if (token.isEmpty) {
+        final openQQ = await _readJsonMap(_openQQConfigFile);
+        final reverseWs = openQQ?['reverseWs'];
+        if (reverseWs is List && reverseWs.isNotEmpty) {
+          final first = reverseWs.first;
+          if (first is Map) {
+            token = first['token']?.toString().trim() ?? '';
+          }
+        }
+        if (token.isEmpty) token = _newToken();
+      }
+      platform['ws_reverse_host'] = '0.0.0.0';
+      platform['ws_reverse_port'] = OpenQQDefaults.oneBotPort;
+      platform['ws_reverse_token'] = token;
+      for (var i = 0; i < platforms.length; i++) {
+        final item = platforms[i];
+        if (item is Map && item['type']?.toString() == 'aiocqhttp') {
+          platforms[i] = platform;
+          break;
+        }
+      }
+      await _writeJsonMap(_astrBotConfigFile, config);
+      await _writeJsonMap(_astrBotSeedConfigFile, config);
+      await _syncOpenQQConfig(updateAstrBot: false);
+    } catch (e) {
+      Log.w('同步 AstrBot OpenQQ 配置失败: $e', tag: 'OpenQQ');
+    }
   }
 
   Future<void> refreshInstalled() async {
@@ -223,9 +287,12 @@ class OpenQQController extends GetxController {
       // Run inside the existing proot shell instead of starting another
       // login_ubuntu proot session. Nested proot sessions on Android can
       // receive SIGTERM when the OpenQQ display starts.
+      instance.webUiUrl = 'http://127.0.0.1:${OpenQQDefaults.webPort}';
+      _save();
       await _home.terminalTabManager.addSystemTerminalTab();
       final tab = _home.terminalTabManager.tabs.last;
       tab.pty?.writeString('bash /root/openqq-display-start.sh\n');
+      _watchOpenQQTerminal(tab.id);
       var listening = false;
       for (var attempt = 0; attempt < 40; attempt++) {
         if (!await _home.isPortAvailable(OpenQQDefaults.webPort)) {
@@ -258,6 +325,8 @@ class OpenQQController extends GetxController {
 
   Future<void> stop() async {
     if (instance.stopping) return;
+    _logPollTimer?.cancel();
+    _logPollTimer = null;
     instance.stopping = true;
     busy.value = true;
     update();
@@ -319,6 +388,28 @@ class OpenQQController extends GetxController {
         update();
       },
     );
+  }
+
+  void _watchOpenQQTerminal(String tabId) {
+    _logPollTimer?.cancel();
+    _watchedLogOffset = 0;
+    _logPollTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final tabs = _home.terminalTabManager.tabs;
+      final index = tabs.indexWhere((tab) => tab.id == tabId);
+      if (index < 0) {
+        _logPollTimer?.cancel();
+        _logPollTimer = null;
+        return;
+      }
+      final log = tabs[index].logText;
+      if (log.length < _watchedLogOffset) {
+        _watchedLogOffset = 0;
+      }
+      if (log.length <= _watchedLogOffset) return;
+      final chunk = log.substring(_watchedLogOffset);
+      _watchedLogOffset = log.length;
+      _parseRuntimeOutput(chunk);
+    });
   }
 
   Future<void> _copyAssetsToUbuntu() async {
@@ -433,16 +524,28 @@ class OpenQQController extends GetxController {
     }
     final existingToken =
         platform['ws_reverse_token']?.toString().trim() ?? '';
+    final openQQBefore = await _readJsonMap(_openQQConfigFile);
+    var openQQToken = '';
+    final reverseWs = openQQBefore?['reverseWs'];
+    if (reverseWs is List && reverseWs.isNotEmpty) {
+      final first = reverseWs.first;
+      if (first is Map) {
+        openQQToken = first['token']?.toString().trim() ?? '';
+      }
+    }
     // An empty token is valid for aiocqhttp. Preserve it while AstrBot is
     // already running; generating a new one would require an AstrBot restart.
     final token = existingToken.isNotEmpty
         ? existingToken
-        : (updateAstrBot ? _newToken() : '');
+        : (updateAstrBot
+            ? (openQQToken.isNotEmpty ? openQQToken : _newToken())
+            : '');
     platform['ws_reverse_host'] = '0.0.0.0';
     platform['ws_reverse_port'] = OpenQQDefaults.oneBotPort;
     platform['ws_reverse_token'] = token;
     if (updateAstrBot) {
       await _writeJsonMap(_astrBotConfigFile, astrBot);
+      await _writeJsonMap(_astrBotSeedConfigFile, astrBot);
     }
 
     final openQQ = await _readJsonMap(_openQQConfigFile) ?? <String, dynamic>{};

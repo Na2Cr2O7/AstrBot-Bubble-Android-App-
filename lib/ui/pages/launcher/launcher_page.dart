@@ -105,6 +105,7 @@ class _LauncherPageState extends State<LauncherPage>
 
   Future<void> _startAstrBot() async {
     try {
+      await openQQ.syncAstrBotConfig();
       await homeController.loadAstrBot();
       _showSnack('AstrBot 启动任务已进入 main 终端');
       widget.onNavigate?.call(2);
@@ -1281,6 +1282,13 @@ class _LauncherPageState extends State<LauncherPage>
                         case 'stopVnc':
                           await openqq.stopVnc();
                           break;
+                        case 'toggleAutoStopVnc':
+                          openqq.setAutoStopVnc(!openqq.autoStopVnc.value);
+                          break;
+                        case 'openWebUi':
+                          homeController.requestOpenOpenQQWebUi();
+                          widget.onNavigate?.call(1);
+                          break;
                         case 'copyWebUi':
                           final token = data.webUiToken;
                           final url = token.isEmpty
@@ -1295,10 +1303,28 @@ class _LauncherPageState extends State<LauncherPage>
                           break;
                       }
                     },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(value: 'refresh', child: Text('刷新状态')),
-                      PopupMenuItem(value: 'stopVnc', child: Text('停止登录画面')),
-                      PopupMenuItem(value: 'copyWebUi', child: Text('复制 WebUI 地址')),
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'refresh',
+                        child: Text('刷新状态'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'stopVnc',
+                        child: Text('停止登录画面'),
+                      ),
+                      CheckedPopupMenuItem<String>(
+                        value: 'toggleAutoStopVnc',
+                        checked: openqq.autoStopVnc.value,
+                        child: const Text('登录后自动关闭画面'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'openWebUi',
+                        child: Text('打开 OpenQQ WebUI'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'copyWebUi',
+                        child: Text('复制 WebUI 地址'),
+                      ),
                     ],
                   ),
                 ],
