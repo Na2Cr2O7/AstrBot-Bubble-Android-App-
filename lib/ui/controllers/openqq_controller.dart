@@ -32,6 +32,8 @@ class OpenQQDefaults {
     'openqq-stop.sh',
     'openqq-vnc-start.sh',
     'openqq-vnc-stop.sh',
+    'openqq-display-start.sh',
+    'openqq-node-start.sh',
   ];
 }
 
@@ -204,6 +206,7 @@ class OpenQQController extends GetxController {
     if (!instance.installed) {
       throw StateError('OpenQQ 尚未安装');
     }
+    await _copyAssetsToUbuntu();
     if (await _home.isPortAvailable(ServicePorts.dashboardPort)) {
       throw StateError('请先启动 AstrBot');
     }
@@ -216,12 +219,21 @@ class OpenQQController extends GetxController {
     update();
     try {
       await _syncOpenQQConfig(updateAstrBot: false);
-      final command = _ubuntuCommand('exec bash /root/openqq-start.sh');
+      final readyFile =
+          File('${scripts.ubuntuPath}/tmp/openqq-display-ready');
+      try {
+        if (await readyFile.exists()) await readyFile.delete();
+      } catch (_) {}
       await _home.terminalTabManager.addCommandTerminalTab(
         title: 'OpenQQ',
-        command: command,
+        command: _ubuntuCommand('exec bash /root/openqq-display-start.sh'),
         showInTerminal: true,
-        onOutput: _parseRuntimeOutput,
+        onOutput: (output) {
+          if (output.contains('noVNC:')) {
+            instance.vncRunning = true;
+          }
+          _parseRuntimeOutput(output);
+        },
         onCommandExit: (code) {
           instance.running = false;
           instance.starting = false;
