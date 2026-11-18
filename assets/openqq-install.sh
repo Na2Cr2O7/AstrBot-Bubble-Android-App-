@@ -207,6 +207,7 @@ PY
     then
       log "OpenQQ ${OPENQQ_VERSION} is already installed"
       printf '__OPENQQ_ALREADY_INSTALLED__\n'
+      printf '__OPENQQ_INSTALL_DONE__\n'
       return 0
     fi
   fi

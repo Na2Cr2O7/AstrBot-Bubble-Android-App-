@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../controllers/openqq_controller.dart';
 import '../../controllers/terminal_controller.dart';
 import '../../widgets/glass_panel.dart';
 import '../launcher/launcher_page.dart';
@@ -25,6 +26,7 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    Get.put(OpenQQController());
     _mainTabWorker = ever<int?>(homeController.pendingMainTabIndex, (index) {
       if (index == null || index < 0 || index > 2) return;
       _openTab(index);
