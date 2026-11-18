@@ -1259,6 +1259,9 @@ class _LauncherPageState extends State<LauncherPage>
         final qq = data.selfId.isNotEmpty
             ? data.selfId
             : (data.qq.isNotEmpty ? data.qq : '未登录');
+        final accountLine = data.loggedIn && data.selfId.isEmpty && data.qq.isEmpty
+            ? 'QQ 已登录'
+            : 'QQ $qq · $status';
         final card = GlassPanel(
           padding: const EdgeInsets.all(16),
           opacity: homeController.cardGlassOpacity.value,
@@ -1331,7 +1334,7 @@ class _LauncherPageState extends State<LauncherPage>
               ),
               const SizedBox(height: 8),
               Text(
-                'QQ $qq · $status',
+                accountLine,
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               if (data.lastError.isNotEmpty) ...[

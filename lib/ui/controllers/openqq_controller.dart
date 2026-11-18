@@ -67,6 +67,7 @@ class OpenQQInstance {
         'qq': qq,
         'selfId': selfId,
         'accessToken': accessToken,
+        'loggedIn': loggedIn,
         'webPort': webPort,
         'vncPort': vncPort,
         'novncPort': novncPort,
@@ -79,6 +80,7 @@ class OpenQQInstance {
     qq = data['qq']?.toString() ?? qq;
     selfId = data['selfId']?.toString() ?? selfId;
     accessToken = data['accessToken']?.toString() ?? accessToken;
+    loggedIn = data['loggedIn'] == true;
     webPort = _int(data['webPort'], webPort);
     vncPort = _int(data['vncPort'], vncPort);
     novncPort = _int(data['novncPort'], novncPort);
@@ -107,15 +109,22 @@ class OpenQQController extends GetxController {
       File('${scripts.ubuntuPath}/root/cmd_config.json');
   File get _openQQConfigFile =>
       File('${scripts.ubuntuPath}${OpenQQDefaults.installRoot}/config/openqq.json');
+  File get _statusFile => File(
+      '${scripts.ubuntuPath}${OpenQQDefaults.installRoot}/.runtime/status.json');
 
   String _runtimeBuffer = '';
   Timer? _logPollTimer;
+  Timer? _statusPollTimer;
   int _watchedLogOffset = 0;
+  bool _autoStopVncScheduled = false;
+  int _astrBotLogOffset = 0;
 
   @override
   void onClose() {
     _logPollTimer?.cancel();
     _logPollTimer = null;
+    _statusPollTimer?.cancel();
+    _statusPollTimer = null;
     super.onClose();
   }
 
@@ -277,7 +286,7 @@ class OpenQQController extends GetxController {
     }
     instance.starting = true;
     instance.running = false;
-    instance.loggedIn = false;
+    instance.loggedIn = instance.selfId.isNotEmpty || instance.loggedIn;
     instance.lastError = '';
     _runtimeBuffer = '';
     busy.value = true;
@@ -293,6 +302,7 @@ class OpenQQController extends GetxController {
       final tab = _home.terminalTabManager.tabs.last;
       tab.pty?.writeString('bash /root/openqq-display-start.sh\n');
       _watchOpenQQTerminal(tab.id);
+      _watchOpenQQStatus();
       var listening = false;
       for (var attempt = 0; attempt < 40; attempt++) {
         if (!await _home.isPortAvailable(OpenQQDefaults.webPort)) {
@@ -327,6 +337,9 @@ class OpenQQController extends GetxController {
     if (instance.stopping) return;
     _logPollTimer?.cancel();
     _logPollTimer = null;
+    _statusPollTimer?.cancel();
+    _statusPollTimer = null;
+    _autoStopVncScheduled = false;
     instance.stopping = true;
     busy.value = true;
     update();
@@ -412,6 +425,80 @@ class OpenQQController extends GetxController {
     });
   }
 
+  void _markLoggedIn(String selfId) {
+    instance.loggedIn = true;
+    instance.running = true;
+    instance.starting = false;
+    if (selfId.isNotEmpty && selfId != '0') {
+      instance.selfId = selfId;
+      instance.qq = selfId;
+    }
+    _save();
+    update();
+    if (autoStopVnc.value && !_autoStopVncScheduled) {
+      _autoStopVncScheduled = true;
+      Future<void>.delayed(const Duration(seconds: 3), () {
+        if (autoStopVnc.value && instance.running) {
+          unawaited(stopVnc());
+        }
+      });
+    }
+  }
+
+  void _watchOpenQQStatus() {
+    _statusPollTimer?.cancel();
+    _autoStopVncScheduled = false;
+    final mainTabs = _home.terminalTabManager.tabs;
+    final mainTab = mainTabs.where((tab) => tab.id == 'fixed_astrbot');
+    _astrBotLogOffset = mainTab.isEmpty ? 0 : mainTab.first.logText.length;
+    _statusPollTimer = Timer.periodic(const Duration(seconds: 2), (_) async {
+      Map<String, dynamic>? data;
+      try {
+        data = await _readJsonMap(_statusFile);
+      } catch (_) {
+        return;
+      }
+      if (data == null) return;
+      final phase = data['phase']?.toString() ?? '';
+      final selfId = data['self_id']?.toString() ?? '';
+      if (phase == 'session_ready' &&
+          selfId.isNotEmpty &&
+          selfId != '0' &&
+          !instance.loggedIn) {
+        _markLoggedIn(selfId);
+      } else if (phase == 'offline' || phase == 'hook_error') {
+        if (instance.loggedIn || instance.lastError.isEmpty) {
+          instance.loggedIn = false;
+          instance.selfId = '';
+          instance.qq = '';
+          _save();
+          if (phase == 'hook_error') {
+            instance.lastError = 'OpenQQ 会话异常，请查看终端日志';
+          }
+          update();
+        }
+      }
+
+      // Fallback: AstrBot only logs 适配器已连接 after OpenQQ's reverse WS
+      // is actually up, which is the definitive login-ready signal.
+      if (!instance.loggedIn) {
+        final tabs = _home.terminalTabManager.tabs;
+        final fixed = tabs.where((tab) => tab.id == 'fixed_astrbot');
+        if (fixed.isNotEmpty) {
+          final log = fixed.first.logText;
+          if (log.length < _astrBotLogOffset) _astrBotLogOffset = 0;
+          if (log.length > _astrBotLogOffset) {
+            final chunk = log.substring(_astrBotLogOffset);
+            _astrBotLogOffset = log.length;
+            if (chunk.contains('适配器已连接')) {
+              _markLoggedIn(instance.selfId);
+            }
+          }
+        }
+      }
+    });
+  }
+
   Future<void> _copyAssetsToUbuntu() async {
     final root = Directory('${scripts.ubuntuPath}/root');
     await root.create(recursive: true);
@@ -459,25 +546,6 @@ class OpenQQController extends GetxController {
       instance.webPort = int.tryParse(webUi.group(1)!) ?? instance.webPort;
       instance.webUiToken = webUi.group(2)!;
       instance.webUiUrl = 'http://127.0.0.1:${instance.webPort}';
-    }
-
-    final ready = RegExp(
-      r'"type"\s*:\s*"session_ready".*?"self_id"\s*:\s*"(\d+)"',
-    ).firstMatch(text);
-    if (ready != null && !instance.loggedIn) {
-      instance.loggedIn = true;
-      instance.selfId = ready.group(1)!;
-      instance.qq = instance.selfId;
-      instance.running = true;
-      instance.starting = false;
-      _save();
-      update();
-      if (autoStopVnc.value) {
-        Future<void>.delayed(const Duration(seconds: 3), () {
-          unawaited(stopVnc());
-        });
-      }
-      return;
     }
 
     if (text.contains('hook_error') ||
