@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:settings/settings.dart';
 
+import '../../core/config/feature_flags.dart';
 import '../../core/diagnostics/diagnostic_service.dart';
 import '../controllers/terminal_controller.dart';
 
@@ -38,12 +39,16 @@ Future<void> showDiagnosticDialog(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('将检查运行环境、后台权限、AstrBot、NapCat 和模型配置。模型测试会消耗少量 Token，单个模型最多等待 120 秒。'),
+              Text(
+                kEnableNapCat
+                    ? '将检查运行环境、后台权限、AstrBot、NapCat 和模型配置。模型测试会消耗少量 Token，单个模型最多等待 120 秒。'
+                    : '将检查运行环境、后台权限、AstrBot 和模型配置。模型测试会消耗少量 Token，单个模型最多等待 120 秒。',
+              ),
               const SizedBox(height: 12),
-              ...const [
+              ...[
                 '运行环境检查',
-                'AstrBot 和 NapCat 运行状态',
-                'NapCat 连接检查',
+                if (kEnableNapCat) 'AstrBot 和 NapCat 运行状态',
+                if (kEnableNapCat) 'NapCat 连接检查',
                 'AstrBot 配置检查',
                 '模型连通性测试',
               ].map(

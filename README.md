@@ -30,7 +30,7 @@
 本项目基于[**AstrBot-Android-App**](https://github.com/zz6zz666/AstrBot-Android-App)进行重构，解决了下面问题：
 - 修复了启动卡在**配置中**的bug
 - 安装分步进行，不再一次安装，减少出错概率。首次启动请在主页点击**环境管理**进行安装
-- 增加多NapCat账号管理，泡泡版支持部署多个BOT
+- QQ 接入从 NapCat 迁移到 OpenQQ，当前为单 QQ 账号
 - 优化了使用体验
 - 与原版共存，与原版数据隔离
 ---
@@ -79,13 +79,14 @@
 | 功能 | 是否支持 | 说明 |
 |------|----------|------|
 | 将你的 QQ 号变成 AI 机器人 | ✅ | 登录后即可自动收发消息，调用大模型回复 |
-| QQ多账号 | ✅ | 支持多个QQ账号登录 |
+| QQ 多账号 | ❌ | 当前 OpenQQ 方案为单账号；旧 NapCat 多账号入口已隐藏 |
 | 支持Telegram平台 | ✅  |  |
 | 代码执行器 | ❌ | 代码沙箱的启用，依赖于 Docker 环境，安卓上的 ubuntu 容器默认未安装 |
 | 图形化配置界面 | ✅ | 内置 WebView，直接在手机上完成所有设置 |
 | 接入多种大模型 | ✅ | 支持 OpenAI、Gemini、Llama、Dify、国产平台 API |
 | 插件扩展功能 | ✅ | 可开启翻译、搜索、记忆等功能插件 |
 | 后台稳定运行 | ✅ | 息屏、切后台不中断，消息实时响应 |
+| QQ 富媒体消息 | ⚠️ | 图片/语音/文件下载受 OpenQQ 上游 bug 影响，等待上游修复 |
 
 ---
 
@@ -109,15 +110,15 @@
 
 
 1. **首次启动环境安装**  
- - 主页->环境管理 依次安装“基础命令”、“uv”、“NapCat”、“AstrBot”
+ - 主页->环境管理 依次安装“基础命令”、“uv”、“OpenQQ”、“AstrBot”
  - 安装完成，点击刷新，图标右下显示绿色勾则安装成功
 
 2. **强烈建议人工监视终端输出**  
  - 虽然过程自动化并可后台自动运行，但我们**强烈建议**你在首次启动时切入**终端日志**页面，持续观察安装进度。  
  - 这样可以第一时间发现网络阻塞、下载失败等问题，避免长时间等待无果。
 
-3. **napcat 安装可能耗时较长且易失败**  
- - 特别是 `napcat` 组件（负责 AstrBot 与 QQ 协议通信），其安装时间较长，且对网络稳定性要求高。  
+3. **OpenQQ 安装可能耗时较长**  
+ - OpenQQ 会安装 Node 26、指定版本 Linux QQ 和原生桥接模块，首次安装时间较长，且对网络稳定性要求高。  
  - 若发现卡住或报错，可**直接关闭 App 再次启动**，系统会从中断处继续安装。
 
 4. **安装中断可自动恢复**  
@@ -129,7 +130,7 @@
  - 此时需进入手机设置 → 应用管理 → 找到 AstrBot App → **清除应用数据** → 重新启动。
 
 6. **特例警告**  
- - 终端输出显示正在**安装系统软件包**（而非 uv, napcat 等资源下载）时，请务必避免操作中断！！
+ - 终端输出显示正在**安装系统软件包**（而非 uv、OpenQQ 等资源下载）时，请务必避免操作中断！！
  - 若终端出现如下提示：  
  `dpkg was interrupted, you must manually run 'dpkg --configure -a' to correct the problem`， 这表明系统软件包配置中断。虽然你可以按提示尝试修复，但我们建议你：
  **立即清除应用数据并重新初始化**。
@@ -148,30 +149,28 @@
  - 启动后 App 会请求通知权限，**必须点击“允许”**。  
  - ❌ 若拒绝，机器人将无法在后台持续运行。
 
-2. **添加NapCat账号**  
- - 可指定监听端口，可留空自动分配
- - 启动账号，等待二维码弹出
+2. **先启动 AstrBot**  
+ - 主页点击“启动 AstrBot”，等待 WebUI 可以打开。  
+ - OpenQQ 启动前会检查 AstrBot 是否已运行，并自动同步 aiocqhttp token。
 
-3. **扫码登录 QQ 账号**  
- - 使用你手机上的 QQ 扫码登录。  
- - ✨ 体验优化：扫码时可自由切换后台（如截图、切换到 QQ 扫码），返回 App 后仍能正常进入控制台。
+3. **启动 OpenQQ 并扫码**  
+ - 主页点击“启动 OpenQQ”，再点“登录画面”。  
+ - 使用你手机上的 QQ 扫码登录；登录成功后卡片会显示账号，登录画面默认自动关闭。  
+ - QQ 登录态会持久化，正常情况下重启 App / OpenQQ 后无需再次扫码。
 
-4. **启动AstrBot**  
- - 主页点击启动AstrBot
-
-5. **查看通知栏状态**  
+4. **查看通知栏状态**  
  - 成功运行后，通知栏将显示“正在运行”常驻通知。  
  - 🔴 **禁止手动清除该通知**，否则服务将终止。
 
-6. **首次登录控制台**  
+5. **首次登录控制台**  
  - 默认用户名和密码均为：`astrbot`  
  - 登录后请按提示立即修改密码，确保账户安全。
 
-7. **保留预设通信接口**  
- - 在“机器人” → “通信接口”中，`pre-config` 是内置的 NapCatQQ 连接通道。  
- - ❌ **请勿修改或删除此接口**，否则机器人将无法与 QQ 通信。
+6. **无需手动配置 OpenQQ 通信接口**  
+ - OpenQQ 与 AstrBot 的 `aiocqhttp` 连接会由 App 自动维护，包括端口和 token。  
+ - ❌ 不要手动修改 `/root/OpenQQ/config/openqq.json`，否则可能导致连接中断。
 
-8. **填写大模型 API 密钥**  
+7. **填写大模型 API 密钥**  
  - 前往**模型提供商**页面，新增并填入你的模型服务商提供的 Token（API Key）。
  - 这是你唯一需要动手配置的地方，请自行搜索，或参考 AstrBot 官方[**文档**](https://docs.astrbot.app/)的 “接入大模型服务” 页面。  
  - 支持 OpenAI、Anthropic、Ollama、智谱、DeepSeek、Dify 等平台。  
@@ -197,7 +196,8 @@ flutter build apk --release --flavor normal
  - [**AstrBot-Android-App**](https://github.com/zz6zz666/AstrBot-Android-App)：原版AstrBot项目
  - [**Code LFA**](https://github.com/nightmare-space/code_lfa)：提供安卓端 Ubuntu 容器环境
  - [**AstrBot**](https://docs.astrbot.app/)：强大的多平台聊天机器人框架
- - [**NapCatQQ**](https://napneko.github.io/guide/napcat)：高效稳定的 QQ 协议适配器
+ - [**OpenQQ**](https://github.com/OpenQQ/OpenQQ)：当前 QQ 接入方案
+ - [**NapCatQQ**](https://napneko.github.io/guide/napcat)：旧版 QQ 接入方案；代码保留用于兼容，入口已隐藏
 
 ---
 

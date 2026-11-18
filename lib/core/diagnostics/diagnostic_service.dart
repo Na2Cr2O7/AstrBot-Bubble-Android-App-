@@ -8,6 +8,7 @@ import 'package:global_repository/global_repository.dart';
 import 'package:http/http.dart' as http;
 
 import '../../ui/controllers/terminal_controller.dart';
+import '../config/feature_flags.dart';
 import '../config/service_ports.dart';
 import '../constants/scripts.dart' as scripts;
 
@@ -184,15 +185,15 @@ class DiagnosticService {
   static const modelPreferenceSkip = 'skip';
   static const modelPreferenceAgree = 'agree';
 
-  static const itemTitles = <String>[
-    '应用状态',
-    '后台运行权限',
-    '运行环境检查',
-    'AstrBot 和 NapCat 运行状态',
-    'NapCat 连接检查',
-    'AstrBot 配置检查',
-    '模型连通性测试',
-  ];
+  static List<String> get itemTitles => [
+        '应用状态',
+        '后台运行权限',
+        '运行环境检查',
+        if (kEnableNapCat) 'AstrBot 和 NapCat 运行状态',
+        if (kEnableNapCat) 'NapCat 连接检查',
+        'AstrBot 配置检查',
+        '模型连通性测试',
+      ];
 
   final HomeController controller;
   final ValueChanged<DiagnosticItem>? onChanged;
@@ -215,28 +216,28 @@ class DiagnosticService {
       final item = items[i]..status = DiagnosticStatus.running;
       onChanged?.call(item);
       try {
-        switch (i) {
-          case 0:
+        switch (item.title) {
+          case '应用状态':
             item
               ..status = DiagnosticStatus.passed
               ..detail = '泡泡版运行正常';
             break;
-          case 1:
+          case '后台运行权限':
             await _checkBackgroundPermission(item);
             break;
-          case 2:
+          case '运行环境检查':
             await _checkEnvironment(item);
             break;
-          case 3:
+          case 'AstrBot 和 NapCat 运行状态':
             await _checkProcesses(item);
             break;
-          case 4:
+          case 'NapCat 连接检查':
             await _checkBindings(item);
             break;
-          case 5:
+          case 'AstrBot 配置检查':
             await _summarizeConfigs(item);
             break;
-          case 6:
+          case '模型连通性测试':
             if (testModel) {
               await _testModels(item);
             } else {
@@ -279,8 +280,9 @@ class DiagnosticService {
           File('$root/usr/bin/sudo').existsSync(),
       'uv': File('$root/root/.local/bin/uv').existsSync() &&
           File('$root/root/.local/bin/uvx').existsSync(),
-      'NapCat': Directory('$root/root/napcat').existsSync() &&
-          File('$root/root/libnapcat_launcher.so').existsSync(),
+      if (kEnableNapCat)
+        'NapCat': Directory('$root/root/napcat').existsSync() &&
+            File('$root/root/libnapcat_launcher.so').existsSync(),
       'AstrBot': controller.isAstrBotInstalled,
     };
     final missing = checks.entries

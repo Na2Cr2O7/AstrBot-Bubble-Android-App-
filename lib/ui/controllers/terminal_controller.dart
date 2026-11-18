@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 
 import '../../core/config/app_config.dart';
 import '../../core/config/environment_config.dart';
+import '../../core/config/feature_flags.dart';
 import '../../core/config/service_ports.dart';
 import '../../core/config/ui_preferences.dart';
 import '../../generated/l10n.dart';
@@ -1453,6 +1454,7 @@ fi
     _loadCustomWebViews();
     _loadHiddenWebUiTargetIds();
     _loadNapCatInstances();
+    _applyNapCatHiddenMigration();
     _loadUiPreferences();
 
     // 为 Google Play 上架做准备
@@ -1605,6 +1607,27 @@ fi
         .map((e) => _normalizeNapCatInstance(Map<String, dynamic>.from(e)))
         .toList();
     unawaited(_migrateLegacyBotBindingsOnce());
+  }
+
+  /// Keep legacy NapCat data, but remove its entry points when the
+  /// OpenQQ migration switch is off.
+  void _applyNapCatHiddenMigration() {
+    if (kEnableNapCat) return;
+    napCatWebUiEnabledRx.value = false;
+    if (napCatWebUiEnabled.get() == true) {
+      napCatWebUiEnabled.set(false);
+    }
+    final hidden = hiddenWebUiTargetIds.toSet();
+    var changed = hidden.add('napcat');
+    for (final instance in napCatInstances) {
+      final id = instance['id']?.toString() ?? '';
+      if (id.isEmpty) continue;
+      if (hidden.add('napcat:$id')) changed = true;
+    }
+    if (changed) {
+      hiddenWebUiTargetIds.assignAll(hidden);
+      _saveHiddenWebUiTargetIds();
+    }
   }
 
   void _loadHiddenWebUiTargetIds() {

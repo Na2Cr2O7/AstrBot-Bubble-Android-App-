@@ -21,7 +21,7 @@ _AstrBot-Bubble-Android-App_ 是由基于「zz6zz666」与「AAswordman」的开
 ## 1. 适用范围
 
 本政策适用于您在使用 _AstrBot-Bubble-Android-App_ 是由基于「zz6zz666」与「AAswordman」的开源产品[zz6zz666/AstrBot-Android-App](https://github.com/zz6zz666/AstrBot-Android-App) 重构优化版，此版本作者为「MuFengDR」（以下简称“我”）。本《隐私政策》旨在向您说明我如何收集、使用、存储、共享与保护您的信息，以及您如何行使相关权利。请您在使用前仔细阅读并充分理解本政策的全部内容。
- 移动应用过程中的个人信息处理活动（包括后续版本、功能模块更新或扩展）。本应用基于AstrBot聊天机器人框架、NapCatQQ消息适配器与Code LFA的Ubuntu容器环境打造，您在使用第三方框架及适配器时，还应遵守其相应的隐私政策。
+ 移动应用过程中的个人信息处理活动（包括后续版本、功能模块更新或扩展）。本应用基于 AstrBot 聊天机器人框架、OpenQQ 消息适配器（保留 NapCatQQ 兼容代码）与 Code LFA 的 Ubuntu 容器环境打造，您在使用第三方框架及适配器时，还应遵守其相应的隐私政策。
 
 ## 2. 我收集的信息
 
@@ -36,7 +36,7 @@ _AstrBot-Bubble-Android-App_ 是由基于「zz6zz666」与「AAswordman」的开
 - 我**不收集**日志信息、崩溃数据、性能数据或诊断信息。
 - 我**不使用**任何第三方统计或分析 SDK。
 - 我**不要求**您注册账户。
-- 您通过 NapCatQQ 适配器登录的 QQ 账号信息由该适配器在本地处理，我不直接收集和存储您的 QQ 账号凭证，相关数据仅保存在您的设备本地。
+- 您通过 OpenQQ 适配器登录的 QQ 账号信息由该适配器在本地处理，我不直接收集和存储您的 QQ 账号凭证，相关数据仅保存在您的设备本地。
 
 ## 3. 权限使用说明
 
@@ -45,7 +45,7 @@ _AstrBot-Bubble-Android-App_ 是由基于「zz6zz666」与「AAswordman」的开
 - **网络权限**（INTERNET, ACCESS_NETWORK_STATE）：用于连接 AstrBot 服务、访问 WebView 仪表盘、检查应用更新（必要）。
 - **存储/媒体访问权限**（MANAGE_EXTERNAL_STORAGE, READ/WRITE_EXTERNAL_STORAGE, READ_MEDIA_*）：用于读写 Ubuntu 容器环境文件、AstrBot 框架资源、配置文件及数据备份功能（在功能需要时申请）。
 - **通知权限**（POST_NOTIFICATIONS）：用于向您推送必要的服务提醒（如容器启动状态、机器人运行通知等，可自主选择开启）。
-- **前台服务权限**（FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC）：用于在后台保持 AstrBot 和 NapCat 服务运行（必要）。
+- **前台服务权限**（FOREGROUND_SERVICE, FOREGROUND_SERVICE_DATA_SYNC）：用于在后台保持 AstrBot 和 OpenQQ 服务运行（必要）。
 - **电池优化豁免**（REQUEST_IGNORE_BATTERY_OPTIMIZATIONS）：用于请求系统不对应用进行电池优化，以确保后台服务稳定运行（可选，需用户主动授权）。
 
 您可在设备系统设置中随时管理或撤回权限授权，撤回后可能影响相关功能的正常使用，但不影响不依赖该权限的其他功能。
@@ -78,7 +78,8 @@ _AstrBot-Bubble-Android-App_ 是由基于「zz6zz666」与「AAswordman」的开
 
 - **AstrBot Android App**：详情请参考其官方隐私说明（https://github.com/zz6zz666/AstrBot-Android-App）
 - **AstrBot 框架**：详情请参考其官方隐私说明（https://docs.astrbot.app/）
-- **NapCatQQ 消息适配器**：详情请参考其官方隐私说明（https://napneko.github.io/guide/napcat）
+- **OpenQQ 消息适配器**：QQ 登录态与消息均在本机处理
+- **NapCatQQ（旧版兼容代码）**：入口已隐藏，详情请参考其官方隐私说明（https://napneko.github.io/guide/napcat）
 - **Code LFA 容器环境**：详情请参考其官方隐私说明（https://github.com/nightmare-space/code_lfa）
 
 **说明**：本应用不集成任何第三方统计、分析、广告或推送 SDK。所有数据处理均在您的设备本地进行，不会上传到任何第三方服务器。
@@ -150,7 +151,7 @@ _AstrBot-Bubble-Android-App_ 是由基于「zz6zz666」与「AAswordman」的开
 
 ### 网络请求说明
 - **检查更新**：访问 GitHub API (api.github.com) 及镜像源，仅传输应用版本号，不包含任何个人信息
-- **WebView 访问**：访问本地服务 (127.0.0.1)，用于 AstrBot 和 NapCat 管理界面
+- **WebView 访问**：访问本地服务 (127.0.0.1)，用于 AstrBot 和 OpenQQ 管理界面
 
 ### 数据收集清单
 本应用**不收集**以下信息：

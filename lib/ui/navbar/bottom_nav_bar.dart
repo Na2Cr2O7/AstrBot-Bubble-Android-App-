@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../core/config/feature_flags.dart';
 import '../controllers/terminal_controller.dart';
 
 class WebViewBottomNavBar extends StatelessWidget {
@@ -19,7 +20,8 @@ class WebViewBottomNavBar extends StatelessWidget {
     // 使用 Obx 来响应式监听变化
     return Obx(() {
       // 检查 NapCat WebUI 是否启用
-      final bool napCatEnabled = homeController.napCatWebUiEnabledRx.value;
+      final bool napCatEnabled =
+          kEnableNapCat && homeController.napCatWebUiEnabledRx.value;
 
       // 获取自定义 WebView 列表
       final customWebViews = homeController.customWebViews;
