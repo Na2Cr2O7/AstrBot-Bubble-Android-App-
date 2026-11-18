@@ -1,22 +1,20 @@
 # 隐私政策
 
-更新日期：**2025/06/16**
-生效日期：**2025/06/16**
+更新日期：**2025/11/18**
+生效日期：**2025/11/18**
 
 ## 重要告知
 ⚠️ **本应用为完全免费开源软件** ⚠️
 
-- 本应用（AstrBot-Bubble-Android-App）是完全免费的开源项目，**从未授权任何个人或平台进行收费分发**
-- 如您通过付费渠道获取本应用，请立即向相关平台举报并联系我
+- 本应用（AstrBot-Bubble-Android-App-OpenQQ）以及原仓库[zz6zz666/AstrBot-Android-App](https://github.com/zz6zz666/AstrBot-Android-App)都是完全免费的开源项目，**从未授权任何个人或平台进行收费分发**
+- 如您通过付费渠道获取本应用，请立即向相关平台举报
 - 官方获取渠道：[GitHub项目页面](https://github.com/Na2Cr2O7/AstrBot-Bubble-Android-App-)
 
 ## 导言
 
-_AstrBot-Bubble-Android-App_ 是由基于「zz6zz666」与「AAswordman」的开源产品[zz6zz666/AstrBot-Android-App](https://github.com/zz6zz666/AstrBot-Android-App) 重构优化版，此版本作者为「MuFengDR」（以下简称“我”）。本《隐私政策》旨在向您说明我如何收集、使用、存储、共享与保护您的信息，以及您如何行使相关权利。请您在使用前仔细阅读并充分理解本政策的全部内容。
+_AstrBot-Bubble-Android-App-OpenQQ_ 是由基于「zz6zz666」与「AAswordman」的开源产品[zz6zz666/AstrBot-Android-App](https://github.com/zz6zz666/AstrBot-Android-App) 重构优化版，此版本作者为「MuFengDR」（以下简称“我”）。本《隐私政策》旨在向您说明我如何收集、使用、存储、共享与保护您的信息，以及您如何行使相关权利。请您在使用前仔细阅读并充分理解本政策的全部内容。
 
-您使用或继续使用我的服务，即表示您已阅读并同意本《隐私政策》。如对本政策有任何疑问，您可通过以下方式与我联系：
-- 邮箱：**2780464014@qq.com**
-- GitHub：**https://github.com/MuFengDR**
+
 
 ## 1. 适用范围
 
@@ -126,9 +124,8 @@ _AstrBot-Bubble-Android-App_ 是由基于「zz6zz666」与「AAswordman」的开
 ## 12. 联系我
 
 如对本《隐私政策》或个人信息保护事宜有任何问题、意见或建议，请通过以下方式联系：
-- 邮箱：**2780464014@qq.com**
-- GitHub：**https://github.com/MuFengDR**
-- QQ群：**952573476**
+- 邮箱：**SchoolF21@outlook.com**
+
 
 我将尽快审核并在不超过15个工作日内回复。
 

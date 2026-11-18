@@ -1,9 +1,9 @@
 
-# 🫧 AstrBot 安卓 App：让每一个普通人都能拥有自己的 AI 聊天机器人
+# 🫧 AstrBot 安卓 App-OpenQQ 版：让每一个普通人都能拥有自己的 AI 聊天机器人
 
 你是否想过，用自己的 QQ 号，变成一个可以自动回复消息、调用大模型进行智能对话的“AI 账号”？
 
-**AstrBot 安卓 App** 正是为此而生。
+**AstrBot 安卓 App-OpenQQ版** 正是为此而生。
 
 它不是一个普通的 AI 聊天界面，也不是一个本地运行的 AI 工具箱。  
 它的核心功能非常明确：
@@ -17,8 +17,8 @@
 
 最关键的是：**这一切，不需要电脑、不需要懂命令行、不需要配置服务器。**
 
-只需要一部安卓手机，安装 App，等待应用启动完成，扫码登录 QQ，填入大模型密钥，就能让这个 QQ 号“活”起来。
-
+只需要两部安卓手机，安装 App，等待应用启动完成，扫码登录 QQ，填入大模型密钥，就能让这个 QQ 号“活”起来。
+>非常遗憾目前尚无在一台手机上扫码完成登录QQ的方法。~~但是你可以试试镜子+分屏~~
 ---
 
 <p align="center">当然，这个软件是 【开源】 且 【免费】 的 ！！！
@@ -30,9 +30,18 @@
 本项目基于[**AstrBot-Android-App**](https://github.com/zz6zz666/AstrBot-Android-App)进行重构，解决了下面问题：
 - 修复了启动卡在**配置中**的bug
 - 安装分步进行，不再一次安装，减少出错概率。首次启动请在主页点击**环境管理**进行安装
-- QQ 接入从 NapCat 迁移到 OpenQQ，当前为单 QQ 账号
+- QQ 接入从 **删库的NapCat** 迁移到 OpenQQ，~~当前为单 QQ 账号~~由于QQ限制，一台Linux上面只能存在一个QQ实例。
 - 优化了使用体验
 - 与原版共存，与原版数据隔离
+<details>
+<p align="center">
+<img src="logo-C2MGgWT2.png" width=50 />
+<div align="center">晚安，NapCat</div>
+<div align="center">2026.11.12</div>
+</p>
+</details>
+
+
 ---
 
 ## 🌐 什么是 AstrBot？
@@ -74,27 +83,52 @@
 > 📌 **一句话总结**：  
 > AstrBot 是一个功能强大、高度可扩展的 AI 机器人开发框架，适合开发者、极客用户构建专业级聊天机器人。
 
+## 🧭 什么是 OpenQQ？
+![OpenQQ](https://github.com/feijx3/OpenQQ/raw/main/web/logo.svg)
+
+**OpenQQ** 是一个由开发者 **feijx3** 创建的**非官方项目**，与腾讯公司无关。它的核心作用是为 Windows 和 Linux 上的 QQ NT 客户端提供一个 **OneBot v11 标准的桥接**，让开发者能通过标准接口来开发QQ机器人或进行自动化操作。
+
+以下是关于它的关键信息整理：
+
+### 🛠️ 核心功能与特性
+OpenQQ 提供了一整套机器人开发和管理工具：
+- **OneBot v11 桥接**：支持正向 WebSocket 服务端（带鉴权）和反向 WebSocket 客户端（最多8个目标）。
+- **丰富的消息与操作**：支持发送文本、图片、语音、视频、文件等，以及撤回、禁言、踢人、处理好友/群申请等管理操作。
+- **内置 WebUI 控制台**：默认监听本地，提供概览、消息收发、事件流、动作调试、日志查看等功能。
+- **图形化 Bot 编辑**：在 WebUI 中可通过拖拽"积木"的方式搭建机器人逻辑，并能接入 OpenAI 兼容的 AI 接口。
+- **Docker 部署**：内置 Dockerfile 和 compose 文件，支持无头扫码和滑块登录。
+
+### 💻 技术实现方式
+它的实现方式比较"底层"且克制：
+- **Windows**：通过 C++ 原生启动器，在 QQ 注册原生模块的位置（`qq_magic_napi_register`）**挂接会话**，不开启 Electron 的 `--inspect` 端口，也不修改 QQ 安装目录中的文件。
+- **Linux**：使用 `LD_PRELOAD` 预加载引导库，在加载目标 `wrapper.node` 时注入会话。
+- **主体逻辑**：OneBot、WebUI 和会话逻辑均由 Node.js / JavaScript 实现。
+
+### 📋 环境要求
+- **Windows**：Windows 10 / 11 x64，QQ NT 9.x（已测试 `9.9.33-52230` 和 `9.9.37-54395`）。
+- **Linux**：x64 / arm64 架构。
+> 📌 **一句话总结**：      
+> OpenQQ 是一个技术实现精巧的**QQ机器人开发框架**。
+
 ## ✅ 安卓 App 能做什么？不能做什么？
 
 | 功能 | 是否支持 | 说明 |
 |------|----------|------|
 | 将你的 QQ 号变成 AI 机器人 | ✅ | 登录后即可自动收发消息，调用大模型回复 |
-| QQ 多账号 | ❌ | 当前 OpenQQ 方案为单账号；旧 NapCat 多账号入口已隐藏 |
-| 支持Telegram平台 | ✅  |  |
-| 代码执行器 | ❌ | 代码沙箱的启用，依赖于 Docker 环境，安卓上的 ubuntu 容器默认未安装 |
 | 图形化配置界面 | ✅ | 内置 WebView，直接在手机上完成所有设置 |
 | 接入多种大模型 | ✅ | 支持 OpenAI、Gemini、Llama、Dify、国产平台 API |
 | 插件扩展功能 | ✅ | 可开启翻译、搜索、记忆等功能插件 |
 | 后台稳定运行 | ✅ | 息屏、切后台不中断，消息实时响应 |
 | QQ 富媒体消息 | ⚠️ | 图片/语音/文件下载受 OpenQQ 上游 bug 影响，等待上游修复 |
-
+| QQ 多账号 | ❌ | 当前 OpenQQ 方案为单账号；旧 NapCat 多账号入口已隐藏 |
+| 支持Telegram平台 | ❔  | 未测试 |
+| 代码执行器 | ❌ | 代码沙箱的启用，依赖于 Docker 环境，安卓上的 ubuntu 容器默认未安装 |
 ---
 
 ## 🛠️ 使用前必读：完整操作指南与注意事项
 
-由于本 App 面向的是**完全零技术背景的用户群体**，为确保你能顺利完成初始化并稳定运行，请务必仔细阅读以下全部内容。
-- 遇到任何问题，先看教程，80%的问题都能解决：https://b23.tv/dd8pTsM
-- 常见问题与解决办法：https://www.bilibili.com/opus/1263034342856196117
+我还没来得及写
+
 ---
 
 ### 🌐 网络要求
@@ -118,7 +152,7 @@
  - 这样可以第一时间发现网络阻塞、下载失败等问题，避免长时间等待无果。
 
 3. **OpenQQ 安装可能耗时较长**  
- - OpenQQ 会安装 Node 26、指定版本 Linux QQ 和原生桥接模块，首次安装时间较长，且对网络稳定性要求高。  
+ - OpenQQ 会安装 Node 26、指定版本 Linux QQ ,g++,cmake,ninja等编译工具，首次安装时间较长，且对网络稳定性要求高。  
  - 若发现卡住或报错，可**直接关闭 App 再次启动**，系统会从中断处继续安装。
 
 4. **安装中断可自动恢复**  
@@ -132,8 +166,9 @@
 6. **特例警告**  
  - 终端输出显示正在**安装系统软件包**（而非 uv、OpenQQ 等资源下载）时，请务必避免操作中断！！
  - 若终端出现如下提示：  
- `dpkg was interrupted, you must manually run 'dpkg --configure -a' to correct the problem`， 这表明系统软件包配置中断。虽然你可以按提示尝试修复，但我们建议你：
+ `dpkg was interrupted, you must manually run 'dpkg --configure -a' to correct the problem`， 这表明系统软件包配置中断。虽然你可以按提示尝试修复，但建议你：
  **立即清除应用数据并重新初始化**。
+    >修复的话大概10个小时以上吧~
 
 1. **关于前台与息屏运行的说明**  
  - ✅ **首次初始化期间**：虽然理论上支持息屏、切换后台，但强烈建议**保持屏幕常亮**并**人工监视日志输出**，以便快速排查问题。  
@@ -156,6 +191,7 @@
 3. **启动 OpenQQ 并扫码**  
  - 主页点击“启动 OpenQQ”，再点“登录画面”。  
  - 使用你手机上的 QQ 扫码登录；登录成功后卡片会显示账号，登录画面默认自动关闭。  
+    >非常遗憾目前尚无在一台手机上扫码完成登录QQ的方法。
  - QQ 登录态会持久化，正常情况下重启 App / OpenQQ 后无需再次扫码。
 
 4. **查看通知栏状态**  
@@ -197,14 +233,14 @@ flutter build apk --release --flavor normal
  - [**Code LFA**](https://github.com/nightmare-space/code_lfa)：提供安卓端 Ubuntu 容器环境
  - [**AstrBot**](https://docs.astrbot.app/)：强大的多平台聊天机器人框架
  - [**OpenQQ**](https://github.com/OpenQQ/OpenQQ)：当前 QQ 接入方案
- - [**NapCatQQ**](https://napneko.github.io/guide/napcat)：旧版 QQ 接入方案；代码保留用于兼容，入口已隐藏
+
+~~- [**NapCatQQ**](https://napneko.github.io/guide/napcat)：旧版 QQ 接入方案~~删库了,代码保留用于兼容，入口已隐藏
 
 ---
 
 ## 📲 **立即体验**  
- - 百度网盘：[**分享链接**](https://pan.baidu.com/s/1s7bR2WeRmOKZmHHAGgcsQQ?pwd=POPO)
- - 夸克网盘：[**分享链接**](https://pan.quark.cn/s/af1ee9aaffb8?pwd=PjbJ)
- - GitHub 仓库：[GitHub](https://github.com/Na2Cr2O7/AstrBot-Bubble-Android-App-)  在 release 页面下载最新版本 `.apk` 文件安装即可使用
+
+我还没来得及准备
 
 ---
 
@@ -231,11 +267,9 @@ App 内“设置 → 开源许可”也可以查看完整文本。
 
 - 如果你在使用过程中遇到问题或有功能建议，欢迎提交 Issues 或参与项目讨论！ 💬🌟
 
-- 你也可以加入反馈交流 QQ 群：
-  - 由于最近加群人数太多，本人精力实在有限，暂时不公开群号，请自行查看b站视频教程：https://b23.tv/dd8pTsM
-  - 群号可以在b站关注up后查看私信自动回复
+- 你也可以加入反馈交流 QQ 群：现在和以后都应该是没有的
 
-> （注：本文档部分内容可能由 AI生成）
+> （注：本文档部分内容由 AI生成）
 
 
 
