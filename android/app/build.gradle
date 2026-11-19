@@ -59,7 +59,7 @@ android {
         profileTest {
             dimension "distribution"
             applicationIdSuffix ".profile"
-            resValue "string", "app_name", "AstrBot泡泡版"
+            resValue "string", "app_name", "Astrbot-OpenQQ泡泡版"
         }
     }
 
@@ -75,7 +75,7 @@ android {
         }
         debug {
             applicationIdSuffix ".debug"
-            resValue "string", "app_name", "AstrBot泡泡版"
+            resValue "string", "app_name", "Astrbot-OpenQQ泡泡版"
             signingConfig hasKeystoreFile ? signingConfigs.release : signingConfigs.debug
             minifyEnabled false
             shrinkResources false

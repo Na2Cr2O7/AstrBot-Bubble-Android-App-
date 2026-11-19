@@ -115,7 +115,7 @@ class _AstrBotState extends State<AstrBot> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'AstrBot Android',
+      title: 'Astrbot-OpenQQ泡泡版',
       theme: ThemeData(
         colorSchemeSeed: Colors.primaries[3],
       ),
