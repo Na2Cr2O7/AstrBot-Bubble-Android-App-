@@ -57,7 +57,8 @@ printf 'ready\n' > "$READY_FILE"
 
 # Start the Node bridge in the same PTY. Keeping it as a child (instead of
 # exec'ing node) avoids proot killing the session after the display setup.
-export PATH="/root/.nvm/versions/node/v26.13.1/bin:$PATH"
+NODE_VERSION="${NODE_VERSION:-26.13.1}"
+export PATH="/root/.local/node-v${NODE_VERSION}/bin:/root/.nvm/versions/node/v${NODE_VERSION}/bin:/usr/local/bin:$PATH"
 export OPENQQ_QQ_NO_SANDBOX=1
 export OPENQQ_QQ_DISABLE_GPU=1
 cd "$OPENQQ_DIR"

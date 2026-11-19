@@ -5,12 +5,12 @@
 set -euo pipefail
 umask 077
 
-OPENQQ_VERSION="${OPENQQ_VERSION:-v0.3.0}"
-OPENQQ_COMMIT="${OPENQQ_COMMIT:-1ccd54e}"
+OPENQQ_VERSION="${OPENQQ_VERSION:-v0.4.0}"
+OPENQQ_COMMIT="${OPENQQ_COMMIT:-1f86aa3}"
 OPENQQ_DIR="${OPENQQ_DIR:-/root/OpenQQ}"
 OPENQQ_STATE_DIR="${OPENQQ_STATE_DIR:-/root/.openqq-android}"
 NODE_VERSION="${NODE_VERSION:-26.13.1}"
-NVM_VERSION="${NVM_VERSION:-0.40.3}"
+NODE_DIR="${NODE_DIR:-/root/.local/node-v${NODE_VERSION}}"
 QQ_VERSION="${QQ_VERSION:-3.2.35-54395}"
 QQ_DEB_NAME="${QQ_DEB_NAME:-QQ_3.2.35_261103_arm64_01.deb}"
 QQ_DEB_URL="${QQ_DEB_URL:-https://qqdl.gtimg.cn/qqfile/QQNTV2/9.9.37/release/816b3c79/${QQ_DEB_NAME}}"
@@ -46,28 +46,56 @@ apt_install() {
   apt-get -o Acquire::ForceIPv4=true install -y --no-install-recommends "$@"
 }
 
+node_arch() {
+  case "$(uname -m)" in
+    aarch64|arm64) printf '%s\n' arm64 ;;
+    x86_64|amd64) printf '%s\n' x64 ;;
+    *) fail "unsupported Node architecture: $(uname -m)" ;;
+  esac
+}
+
 ensure_node() {
-  local node_bin="/root/.nvm/versions/node/v${NODE_VERSION}/bin"
-  if [ -x "$node_bin/node" ]; then
-    export PATH="$node_bin:$PATH"
-    log "Node v${NODE_VERSION} already installed"
-    return 0
-  fi
-  log "Installing nvm ${NVM_VERSION} and Node v${NODE_VERSION}"
-  local installer="$TMPDIR/nvm-install.sh"
-  local raw="https://raw.githubusercontent.com/nvm-sh/nvm/v${NVM_VERSION}/install.sh"
-  if ! curl_file "$(proxy_url "$raw")" "$installer"; then
-    curl_file "$raw" "$installer" || fail 'could not download the nvm installer'
-  fi
-  bash "$installer"
-  export NVM_DIR="/root/.nvm"
-  # shellcheck disable=SC1091
-  . "$NVM_DIR/nvm.sh"
-  export NVM_NODEJS_ORG_MIRROR="${NVM_NODEJS_ORG_MIRROR:-https://npmmirror.com/mirrors/node/}"
-  nvm install "$NODE_VERSION"
-  nvm alias default "$NODE_VERSION" >/dev/null 2>&1 || true
-  [ -x "$node_bin/node" ] || fail "Node v${NODE_VERSION} was not installed"
-  export PATH="$node_bin:$PATH"
+  local candidate
+  for candidate in \
+    "$NODE_DIR/bin/node" \
+    "/root/.nvm/versions/node/v${NODE_VERSION}/bin/node" \
+    "/usr/local/bin/node"; do
+    [ -x "$candidate" ] || continue
+    if [ "$("$candidate" -v 2>/dev/null)" = "v${NODE_VERSION}" ]; then
+      export PATH="$(dirname "$candidate"):/usr/local/bin:$PATH"
+      log "Node v${NODE_VERSION} already installed"
+      return 0
+    fi
+  done
+
+  local arch
+  arch="$(node_arch)"
+  local dist="node-v${NODE_VERSION}-linux-${arch}"
+  local archive="$TMPDIR/${dist}.tar.xz"
+  local extract_root="$TMPDIR/${dist}-extract"
+  local url
+  log "Installing Node v${NODE_VERSION} from nodejs.org tarball (${arch})"
+  rm -rf "$extract_root"
+  mkdir -p "$extract_root"
+  for url in \
+    "https://nodejs.org/dist/v${NODE_VERSION}/${dist}.tar.xz" \
+    "https://npmmirror.com/mirrors/node/v${NODE_VERSION}/${dist}.tar.xz"; do
+    if curl_file "$url" "$archive" && tar -xJf "$archive" -C "$extract_root"; then
+      break
+    fi
+    rm -f "$archive"
+  done
+  [ -x "$extract_root/${dist}/bin/node" ] || fail "Node v${NODE_VERSION} tarball could not be downloaded or extracted"
+  rm -rf "$NODE_DIR"
+  mkdir -p "$(dirname "$NODE_DIR")"
+  mv "$extract_root/${dist}" "$NODE_DIR"
+  rm -rf "$extract_root" "$archive"
+  mkdir -p /usr/local/bin
+  ln -sf "$NODE_DIR/bin/node" /usr/local/bin/node
+  ln -sf "$NODE_DIR/bin/npm" /usr/local/bin/npm
+  ln -sf "$NODE_DIR/bin/npx" /usr/local/bin/npx
+  export PATH="$NODE_DIR/bin:/usr/local/bin:$PATH"
+  [ "$("$NODE_DIR/bin/node" -v)" = "v${NODE_VERSION}" ] || fail "Node v${NODE_VERSION} verification failed"
 }
 
 linuxqq_ready() {
@@ -114,7 +142,9 @@ get_linuxqq_signed_url() {
 }
 
 download_linuxqq() {
-  local dest="$1" part="${dest}.part" candidate
+  local dest="$1"
+  local part="${dest}.part"
+  local candidate
   for candidate in \
     "${ASTRBOT_LINUXQQ_FILE:-}" \
     "/root/${QQ_DEB_NAME}" \
@@ -249,7 +279,7 @@ d["allowScripts"] = {"@parcel/watcher@2.6.0": True, "esbuild@0.28.2": True}
 json.dump(d, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 PY
 
-  export PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin:$PATH"
+  export PATH="${NODE_DIR}/bin:/root/.nvm/versions/node/v${NODE_VERSION}/bin:/usr/local/bin:$PATH"
   npm config set registry https://registry.npmmirror.com >/dev/null 2>&1 || true
   log "Installing OpenQQ dependencies with Node $(node -v)"
   (cd "$OPENQQ_DIR" && npm ci --no-audit --no-fund)
@@ -275,7 +305,7 @@ PY
 
 main() {
   log "Installing OpenQQ ${OPENQQ_VERSION}; Node ${NODE_VERSION}; QQ ${QQ_VERSION}"
-  apt_install ca-certificates curl git sudo openssl python3 xvfb fluxbox \
+  apt_install ca-certificates curl git sudo openssl python3 xz-utils xvfb fluxbox \
     x11vnc novnc websockify xauth x11-utils fonts-wqy-zenhei \
     cmake g++ make ninja-build
   ensure_node

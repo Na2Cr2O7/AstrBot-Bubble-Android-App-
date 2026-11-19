@@ -17,7 +17,7 @@ class OpenQQDefaults {
   static const String storageKey = 'openqq_instance';
   static const String autoStopVncKey = 'openqq_auto_stop_vnc';
 
-  static const String version = 'v0.3.0';
+  static const String version = 'v0.4.0';
   static const String installRoot = '/root/OpenQQ';
   static const String installMarker = '/root/.openqq-android/installed.json';
 

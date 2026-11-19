@@ -48,7 +48,7 @@ class OpenSourceLicensesPage extends StatelessWidget {
                 const Text(
                   '许可证：GNU Affero General Public License v3.0\n'
                   '上游：https://github.com/feijx3/OpenQQ\n'
-                  '版本：v0.3.0（commit 1ccd54e）\n\n'
+                  '版本：v0.4.0（commit 1f86aa3）\n\n'
                   'App 不把 OpenQQ 源码或二进制打包进 APK；安装时由脚本从上游获取。'
                   'App 会修改 package.json 的 allowScripts，并生成运行配置。'
                   '对应源码可从上述上游版本与本仓库 assets/openqq-install.sh 获取。\n\n'
