@@ -56,7 +56,9 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.41.6'
+          # 与本地开发环境一致：Flutter 3.50.1 / Dart 3.14.0
+          # （flutter_foreground_task 11.0.3 要求 Dart ^3.12.0，更老的 Flutter 无法解析依赖）
+          flutter-version: '3.50.1'
           channel: stable
           cache: true
 
