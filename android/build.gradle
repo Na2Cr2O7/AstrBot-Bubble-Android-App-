@@ -5,6 +5,10 @@ allprojects {
         maven { url 'https://storage.flutter-io.cn/repository/google' }
         maven { url 'https://storage.flutter-io.cn/repository/jcenter' }
         maven { url 'https://storage.flutter-io.cn/repository/public' }
+        // 上面三个国内镜像对海外 IP（如 GitHub Actions runner）会返回 403，
+        // 这里追加官方源兜底：国内仍按顺序先命中镜像，CI 上镜像 403 后自动回落到官方源。
+        google()
+        mavenCentral()
     }
 }
 
