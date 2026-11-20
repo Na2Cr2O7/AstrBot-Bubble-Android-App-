@@ -78,8 +78,8 @@ ensure_node() {
   rm -rf "$extract_root"
   mkdir -p "$extract_root"
   for url in \
-    "https://nodejs.org/dist/v${NODE_VERSION}/${dist}.tar.xz" \
-    "https://npmmirror.com/mirrors/node/v${NODE_VERSION}/${dist}.tar.xz"; do
+    "https://npmmirror.com/mirrors/node/v${NODE_VERSION}/${dist}.tar.xz" \
+    "https://nodejs.org/dist/v${NODE_VERSION}/${dist}.tar.xz" ; do
     if curl_file "$url" "$archive" && tar -xJf "$archive" -C "$extract_root"; then
       break
     fi

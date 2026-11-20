@@ -1,4 +1,4 @@
-﻿{
+{
   "config_version": 2,
   "platform_settings": {
     "unique_session": false,
@@ -10,7 +10,9 @@
     "reply_prefix": "",
     "forward_threshold": 1500,
     "enable_id_white_list": true,
-    "id_whitelist": [],
+    "id_whitelist": [
+      "default:FriendMessage:9999999999"
+    ],
     "id_whitelist_log": true,
     "wl_ignore_admin_on_group": true,
     "wl_ignore_admin_on_friend": true,

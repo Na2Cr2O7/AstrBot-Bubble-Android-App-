@@ -26,6 +26,8 @@ class OpenQQDefaults {
   static const int vncPort = 5900;
   static const int novncPort = 6080;
   static const int oneBotPort = ServicePorts.defaultOneBotWsPort;
+  static const String whitelistSentinel =
+      'default:FriendMessage:9999999999';
 
   static const List<String> assets = [
     'openqq-install.sh',
@@ -198,6 +200,7 @@ class OpenQQController extends GetxController {
           break;
         }
       }
+      _ensureWhitelistSentinel(config);
       await _writeJsonMap(_astrBotConfigFile, config);
       await _writeJsonMap(_astrBotSeedConfigFile, config);
       await _syncOpenQQConfig(updateAstrBot: false);
@@ -561,11 +564,22 @@ class OpenQQController extends GetxController {
     update();
   }
 
+  bool _ensureWhitelistSentinel(Map<String, dynamic> config) {
+    final settings = config['platform_settings'];
+    if (settings is! Map) return false;
+    if (settings['enable_id_white_list'] != true) return false;
+    final whitelist = settings['id_whitelist'];
+    if (whitelist is! List || whitelist.isNotEmpty) return false;
+    whitelist.add(OpenQQDefaults.whitelistSentinel);
+    return true;
+  }
+
   Future<void> _syncOpenQQConfig({required bool updateAstrBot}) async {
     final astrBot = await _readJsonMap(_astrBotConfigFile);
     if (astrBot == null) {
       throw StateError('AstrBot 配置不存在，请先启动一次 AstrBot');
     }
+    _ensureWhitelistSentinel(astrBot);
     final platforms = astrBot['platform'];
     final list = platforms is List ? platforms : <dynamic>[];
     if (platforms is! List) astrBot['platform'] = list;

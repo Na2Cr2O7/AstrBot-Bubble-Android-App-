@@ -1344,6 +1344,13 @@ class _LauncherPageState extends State<LauncherPage>
                   style: TextStyle(color: Theme.of(context).colorScheme.error),
                 ),
               ],
+              const SizedBox(height: 8),
+              Text(
+                'OpenQQ 更新较频繁，建议定期在环境管理中重装以获取最新版本。',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -2685,7 +2692,7 @@ class _LauncherPageState extends State<LauncherPage>
       _EnvStep(
         'openqq',
         'OpenQQ',
-        '安装 QQ / Node / OpenQQ 与登录画面',
+        '安装 QQ / Node / OpenQQ 与登录画面（更新频繁，建议定期重装）',
         const Icon(Icons.qr_code_2),
         reinstallDescription: '将重新检查 OpenQQ、QQ 和 Node，保留登录态与 Bot 数据。是否继续？',
       ),
