@@ -105,7 +105,9 @@ jobs:
           } > android/key.properties
 
           echo "keystore: $(stat -c%s android/key.jks) bytes"
-          keytool -list -v -keystore android/key.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" | head -20
+          # 不要把输出接到 head：pipefail 下 head 提前关闭管道会让 keytool 以 SIGPIPE 退出
+          keytool -list -v -keystore android/key.jks -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" > /tmp/keytool.txt
+          grep -E '^(Alias name|Creation date|Valid from|Certificate fingerprints|SHA256|Owner|Issuer)' /tmp/keytool.txt || true
 
       - name: Get dependencies
         env:
@@ -146,7 +148,8 @@ jobs:
       - name: Verify signature
         run: |
           set -euo pipefail
-          APKSIGNER=$(find "$ANDROID_SDK_ROOT/build-tools" -name apksigner -type f | sort -V | tail -1)
+          SDK_DIR="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          APKSIGNER=$(find "$SDK_DIR/build-tools" -name apksigner -type f | sort -V | tail -1)
           echo "apksigner: $APKSIGNER"
           for apk in build/app/outputs/apk/*/release/*.apk; do
             echo "::group::$apk"
