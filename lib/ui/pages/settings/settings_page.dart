@@ -1037,7 +1037,7 @@ class _SettingsPageState extends State<SettingsPage> {
       // authority: 当前应用包名.documents
       // rootId: ubuntu_root
       final packageName =
-          RuntimeEnvir.packageName ?? 'com.astrbot.astrbot_bubble';
+          RuntimeEnvir.packageName ?? 'com.na2cr2o7.astrbot_openqq';
       final contentUri = Uri.parse(
         'content://$packageName.documents/root/ubuntu_root',
       );

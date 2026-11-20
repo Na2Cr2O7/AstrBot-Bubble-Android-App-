@@ -40,7 +40,7 @@ android {
         resValues = true // 显式启用资源值生成功能
     }
     defaultConfig {
-        applicationId 'com.astrbot.astrbot_bubble'
+        applicationId 'com.na2cr2o7.astrbot_openqq'
         minSdk = 24
         targetSdk = 35
         versionCode = flutter.versionCode

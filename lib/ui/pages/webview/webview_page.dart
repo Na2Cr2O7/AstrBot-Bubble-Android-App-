@@ -19,6 +19,60 @@ import '../../../core/config/service_ports.dart';
 import '../../../core/config/ui_preferences.dart';
 
 class WebViewPage extends StatefulWidget {
+  static bool _legacyWebViewWarningShown = false;
+
+  /// Detect old Android WebView kernels. Below 107, AstrBot's WebUI can fail
+  /// to scroll (overflow-x: hidden + overscroll-behavior-y: none) and the
+  /// login form autofill may not work.
+  static Future<void> maybeWarnLegacyWebView(BuildContext context) async {
+    if (_legacyWebViewWarningShown) return;
+    String? version;
+    try {
+      version = await const MethodChannel('astrbot_channel')
+          .invokeMethod<String>('webview_version');
+    } catch (_) {
+      return;
+    }
+    final major = int.tryParse(version?.split('.').first ?? '') ?? 0;
+    if (major == 0 || major >= 107) return;
+    _legacyWebViewWarningShown = true;
+    if (!context.mounted) return;
+    final openBrowser = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('当前 WebView 内核较旧'),
+        content: SingleChildScrollView(
+          child: Text(
+            '检测到系统 WebView 版本：$version（低于 107）。\n\n'
+            'AstrBot WebUI 可能出现：\n'
+            '• 页面无法正常上下滑动\n'
+            '• 登录页无法自动填充账号密码\n\n'
+            '建议升级 Android System WebView 或 Chrome。'
+            '如果页面仍然无法滑动，可以改用系统浏览器打开：\n'
+            '${ServicePorts.dashboardUrl}\n\n'
+            '自动填充可用的最低内核版本暂未确认。',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('知道了'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('用浏览器打开'),
+          ),
+        ],
+      ),
+    );
+    if (openBrowser == true) {
+      await launchUrl(
+        Uri.parse(ServicePorts.dashboardUrl),
+        mode: LaunchMode.externalApplication,
+      );
+    }
+  }
+
   final bool embedded;
   final double bottomContentInset;
   final VoidCallback? onBackToHome;

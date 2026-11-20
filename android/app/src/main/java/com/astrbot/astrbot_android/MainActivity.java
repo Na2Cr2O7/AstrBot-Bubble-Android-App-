@@ -3,10 +3,12 @@ package com.astrbot.astrbot_android;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.webkit.ValueCallback;
+import android.webkit.WebView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
@@ -208,6 +210,17 @@ public class MainActivity extends FragmentActivity {
                         return;
                     }
                     result.success(context.getApplicationContext().getApplicationInfo().nativeLibraryDir);
+                } else if ("webview_version".equals(call.method)) {
+                    if (android.os.Build.VERSION.SDK_INT < 26) {
+                        result.success(null);
+                        return;
+                    }
+                    try {
+                        PackageInfo info = WebView.getCurrentWebViewPackage();
+                        result.success(info == null ? null : info.versionName);
+                    } catch (Throwable ignored) {
+                        result.success(null);
+                    }
                 } else {
                     result.notImplemented();
                 }

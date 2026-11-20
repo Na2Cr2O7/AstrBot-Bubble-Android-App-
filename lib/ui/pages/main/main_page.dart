@@ -44,6 +44,11 @@ class _MainPageState extends State<MainPage> {
     setState(() {
       _currentIndex = index;
     });
+    if (index == 1) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) WebViewPage.maybeWarnLegacyWebView(context);
+      });
+    }
   }
 
   void _openSettings() {
