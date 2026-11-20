@@ -1045,13 +1045,11 @@ class _WebViewPageState extends State<WebViewPage> {
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(bottom: widget.bottomContentInset),
-              child: IndexedStack(
-                index: selectedIndex,
-                children: targets
-                    .map(
-                      (target) => WebViewWidget(controller: target.controller),
-                    )
-                    .toList(),
+              // Keep only the active WebView mounted. Multiple Android
+              // platform views inside an IndexedStack can steal touches from
+              // the visible page, which breaks scrolling after adding tabs.
+              child: WebViewWidget(
+                controller: targets[selectedIndex].controller,
               ),
             ),
           ),
