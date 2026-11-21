@@ -41,11 +41,23 @@ jobs:
   build:
     name: Build signed APK (${{ inputs.flavor }})
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # 首次冷构建要下 Flutter SDK、Gradle、AGP、依赖，60 分钟不够
+    timeout-minutes: 150
+    env:
+      # 海外 runner 访问国内 maven 镜像会拿到 403，直接跳过镜像省时间
+      CI_SKIP_CN_MIRRORS: 'true'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Point Gradle wrapper at official distribution
+        # 仓库里的 wrapper 为了国内速度指向腾讯镜像，海外 runner 上会非常慢甚至超时；
+        # 只在本次 CI 运行期替换成官方地址，不提交回仓库。
+        run: |
+          sed -i 's#mirrors.cloud.tencent.com/gradle/#services.gradle.org/distributions/#' \
+            android/gradle/wrapper/gradle-wrapper.properties
+          grep distributionUrl android/gradle/wrapper/gradle-wrapper.properties
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4

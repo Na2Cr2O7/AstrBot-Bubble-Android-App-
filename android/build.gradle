@@ -1,12 +1,18 @@
+// CI（GitHub Actions 等海外环境）设置 CI_SKIP_CN_MIRRORS=true，
+// 直接走官方源，省掉每个依赖对国内镜像的三次 403 往返。
+def useCnMirrors = System.getenv('CI_SKIP_CN_MIRRORS') != 'true'
+
 allprojects {
     repositories {
         // google()
         // jcenter()
-        maven { url 'https://storage.flutter-io.cn/repository/google' }
-        maven { url 'https://storage.flutter-io.cn/repository/jcenter' }
-        maven { url 'https://storage.flutter-io.cn/repository/public' }
-        // 上面三个国内镜像对海外 IP（如 GitHub Actions runner）会返回 403，
-        // 这里追加官方源兜底：国内仍按顺序先命中镜像，CI 上镜像 403 后自动回落到官方源。
+        if (useCnMirrors) {
+            maven { url 'https://storage.flutter-io.cn/repository/google' }
+            maven { url 'https://storage.flutter-io.cn/repository/jcenter' }
+            maven { url 'https://storage.flutter-io.cn/repository/public' }
+        }
+        // 国内镜像对海外 IP 会返回 403，这里始终保留官方源兜底：
+        // 国内仍按顺序先命中镜像，镜像不可用时回落到 google()/mavenCentral()。
         google()
         mavenCentral()
     }
