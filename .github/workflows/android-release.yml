@@ -23,10 +23,15 @@ on:
         required: false
         default: ''
         type: string
+      release_tag:
+        description: 'Release tag（留空则用 v<版本名>，例如 v0.1.0-beta8）'
+        required: false
+        default: ''
+        type: string
       create_release:
-        description: '构建成功后创建/更新 GitHub Release 并附上 APK'
+        description: '构建成功后发布 GitHub Release（同一 tag 会覆盖旧 APK）'
         required: true
-        default: false
+        default: true
         type: boolean
 
 # 同一时间只跑一个，避免并发抢占 Gradle 缓存
@@ -41,7 +46,7 @@ jobs:
   build:
     name: Build signed APK (${{ inputs.flavor }})
     runs-on: ubuntu-latest
-    # 首次冷构建要下 Flutter SDK、Gradle、AGP、依赖，60 分钟不够
+    # 冷构建要下 Flutter SDK、Gradle、AGP、依赖，留足余量
     timeout-minutes: 150
     env:
       # 海外 runner 访问国内 maven 镜像会拿到 403，直接跳过镜像省时间
@@ -83,6 +88,44 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
+
+      - name: Resolve version and tag
+        id: version
+        run: |
+          set -euo pipefail
+          PUB_VERSION="$(awk '/^version:/{print $2; exit}' pubspec.yaml)"
+          PUB_NAME="${PUB_VERSION%%+*}"
+          PUB_CODE="${PUB_VERSION##*+}"
+          if [ "$PUB_CODE" = "$PUB_VERSION" ]; then PUB_CODE=""; fi
+
+          NAME="$PUB_NAME"
+          if [ -n "${{ inputs.build_name }}" ]; then NAME="${{ inputs.build_name }}"; fi
+          CODE="$PUB_CODE"
+          if [ -n "${{ inputs.build_number }}" ]; then CODE="${{ inputs.build_number }}"; fi
+
+          TAG="${{ inputs.release_tag }}"
+          if [ -z "$TAG" ]; then TAG="v$NAME"; fi
+
+          # beta/alpha/rc 视为预发布，不抢 Latest 标记
+          PRERELEASE=false
+          case "$NAME" in
+            *beta*|*alpha*|*rc*|*RC*) PRERELEASE=true ;;
+          esac
+
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "code=$CODE" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+          {
+            echo "### 版本"
+            echo ""
+            echo "| 项 | 值 |"
+            echo "| --- | --- |"
+            echo "| 版本名 | \`$NAME\` |"
+            echo "| 版本号 | \`${CODE:-（pubspec 默认）}\` |"
+            echo "| Release tag | \`$TAG\` |"
+            echo "| 预发布 | \`$PRERELEASE\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Check Flutter environment
         run: |
@@ -142,17 +185,17 @@ jobs:
             TARGETS="${{ inputs.flavor }}"
           fi
 
-          EXTRA_ARGS=""
-          if [ -n "${{ inputs.build_name }}" ]; then
-            EXTRA_ARGS="$EXTRA_ARGS --build-name=${{ inputs.build_name }}"
+          ARGS=(--release)
+          if [ -n "${{ steps.version.outputs.name }}" ]; then
+            ARGS+=("--build-name=${{ steps.version.outputs.name }}")
           fi
-          if [ -n "${{ inputs.build_number }}" ]; then
-            EXTRA_ARGS="$EXTRA_ARGS --build-number=${{ inputs.build_number }}"
+          if [ -n "${{ steps.version.outputs.code }}" ]; then
+            ARGS+=("--build-number=${{ steps.version.outputs.code }}")
           fi
 
           for f in $TARGETS; do
-            echo "::group::flutter build apk --release --flavor $f"
-            flutter build apk --release --flavor "$f" $EXTRA_ARGS
+            echo "::group::flutter build apk --flavor $f"
+            flutter build apk "${ARGS[@]}" --flavor "$f"
             echo "::endgroup::"
           done
 
@@ -172,24 +215,71 @@ jobs:
             echo "::endgroup::"
           done
 
+      - name: Collect APKs with stable names
+        id: apks
+        run: |
+          set -euo pipefail
+          NAME="${{ steps.version.outputs.name }}"
+          mkdir -p dist
+          : > /tmp/files.txt
+          for apk in build/app/outputs/apk/*/release/*.apk; do
+            flavor="$(basename "$(dirname "$(dirname "$apk")")")"
+            out="dist/AstrBot-OpenQQ-${NAME}-${flavor}.apk"
+            cp "$apk" "$out"
+            echo "$out" >> /tmp/files.txt
+          done
+          sort -o /tmp/files.txt /tmp/files.txt
+          cat /tmp/files.txt
+          # 供后续步骤按行读取
+          while read -r f; do echo "== $f"; done < /tmp/files.txt
+
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
         with:
           name: astrbot-release-apk-${{ github.run_number }}
-          path: build/app/outputs/apk/*/release/*.apk
+          path: dist/*.apk
           if-no-files-found: error
           retention-days: 30
 
-      - name: Create GitHub Release
+      - name: Publish GitHub Release
         if: ${{ inputs.create_release }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: AstrBot OpenQQ 构建 ${{ github.run_number }}
-          body: |
-            手动构建（${{ inputs.flavor }} flavor）
-            - 版本名：${{ inputs.build_name || '（跟随 pubspec.yaml）' }}
-            - 版本号：${{ inputs.build_number || '（跟随 pubspec.yaml）' }}
-            - 触发：@${{ github.actor }} · 提交 ${{ github.sha }}
-          files: build/app/outputs/apk/*/release/*.apk
-          prerelease: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          NAME: ${{ steps.version.outputs.name }}
+          CODE: ${{ steps.version.outputs.code }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          mapfile -t FILES < /tmp/files.txt
+
+          NOTES=$(mktemp)
+          {
+            echo "手动构建（${{ inputs.flavor }} flavor）"
+            echo
+            echo "| 项 | 值 |"
+            echo "| --- | --- |"
+            echo "| 版本名 | \`$NAME\` |"
+            echo "| 版本号 | \`${CODE:-（pubspec 默认）}\` |"
+            echo "| 提交 | \`${GITHUB_SHA:0:7}\` |"
+            echo "| 触发 | @${{ github.actor }} |"
+            echo "| 运行 | [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |"
+            echo
+            echo "安装前请确认已卸载签名不同的旧版本。"
+          } > "$NOTES"
+
+          cat "$NOTES" >> "$GITHUB_STEP_SUMMARY"
+
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG 已存在，覆盖其中的 APK（其余资产保留）"
+            gh release upload "$TAG" "${FILES[@]}" --clobber
+            gh release edit "$TAG" --notes-file "$NOTES"
+          else
+            echo "创建 Release $TAG"
+            ARGS=(--title "AstrBot OpenQQ $NAME" --notes-file "$NOTES" --target "$GITHUB_SHA")
+            if [ "$PRERELEASE" = "true" ]; then ARGS+=(--prerelease); fi
+            gh release create "$TAG" "${FILES[@]}" "${ARGS[@]}"
+          fi
+
+          echo
+          echo "Release: ${{ github.server_url }}/${{ github.repository }}/releases/tag/$TAG"
