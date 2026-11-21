@@ -84,7 +84,15 @@
 > AstrBot 是一个功能强大、高度可扩展的 AI 机器人开发框架，适合开发者、极客用户构建专业级聊天机器人。
 
 ## 🧭 什么是 OpenQQ？
-![OpenQQ](https://github.com/feijx3/OpenQQ/raw/main/web/logo.svg)
+
+
+<div align=center>
+
+<img src="https://github.com/feijx3/OpenQQ/raw/main/web/logo.svg" width=150 />
+<div style="margin:2em"></div>
+</div>
+
+
 
 **OpenQQ** 是一个由开发者 **feijx3** 创建的**非官方项目**，与腾讯公司无关。它的核心作用是为 Windows 和 Linux 上的 QQ NT 客户端提供一个 **OneBot v11 标准的桥接**，让开发者能通过标准接口来开发QQ机器人或进行自动化操作。
 
@@ -116,7 +124,7 @@ OpenQQ 提供了一整套机器人开发和管理工具：
 |------|----------|------|
 | 将你的 QQ 号变成 AI 机器人 | ✅ | 登录后即可自动收发消息，调用大模型回复 |
 | 图形化配置界面 | ✅ | 内置 WebView，直接在手机上完成所有设置 |
-| 接入多种大模型 | ✅ | 支持 OpenAI、Gemini、Llama、Dify、国产平台 API |
+| 接入多种大模型 | ✅ | 支持 OpenAI、Gemini、Dify、国产平台 API |
 | 插件扩展功能 | ✅ | 可开启翻译、搜索、记忆等功能插件 |
 | 后台稳定运行 | ✅ | 息屏、切后台不中断，消息实时响应 |
 | QQ 富媒体消息 | ✅ | OpenQQ v0.4.0 已修复收图下载；部分大图/表情仍受上游限制 |
@@ -199,7 +207,7 @@ OpenQQ 提供了一整套机器人开发和管理工具：
  - 🔴 **禁止手动清除该通知**，否则服务将终止。
 
 5. **首次登录控制台**  
- - 默认用户名和密码均为：`astrbot`  
+ - **默认用户名和密码均为：`astrbot`**  
  - 登录后请按提示立即修改密码，确保账户安全。
 
 6. **无需手动配置 OpenQQ 通信接口**  
@@ -209,7 +217,7 @@ OpenQQ 提供了一整套机器人开发和管理工具：
 7. **填写大模型 API 密钥**  
  - 前往**模型提供商**页面，新增并填入你的模型服务商提供的 Token（API Key）。
  - 这是你唯一需要动手配置的地方，请自行搜索，或参考 AstrBot 官方[**文档**](https://docs.astrbot.app/)的 “接入大模型服务” 页面。  
- - 支持 OpenAI、Anthropic、Ollama、智谱、DeepSeek、Dify 等平台。  
+ - 支持 OpenAI、Anthropic、智谱、DeepSeek、Dify 等平台。  
  - 配置完成后保存并重启机器人即可。
 
 ---
@@ -240,7 +248,7 @@ flutter build apk --release --flavor normal
 
 ## 📲 **立即体验**  
 
-我还没来得及准备
+release里面的最新安装包
 
 ---
 
@@ -266,8 +274,6 @@ App 内“设置 → 开源许可”也可以查看完整文本。
 ## 反馈交流
 
 - 如果你在使用过程中遇到问题或有功能建议，欢迎提交 Issues 或参与项目讨论！ 💬🌟
-
-- 你也可以加入反馈交流 QQ 群：现在和以后都应该是没有的
 
 > （注：本文档部分内容由 AI生成）
 

@@ -199,3 +199,5 @@ temp/
 
 # Editor swap files
 *.kate-swp
+
+.dsh-tmp/*
